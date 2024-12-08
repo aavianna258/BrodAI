@@ -1,0 +1,8 @@
+langchain_groq
+langchain_openai
+langchain_core
+langsmith
+langchain-community
+langchain-anthropic
+pandas
+PIL
