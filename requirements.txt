@@ -5,4 +5,5 @@ langsmith
 langchain-community
 langchain-anthropic
 pandas
-PIL
+Pillow
+django
