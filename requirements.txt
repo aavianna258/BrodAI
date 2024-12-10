@@ -1,5 +1,5 @@
 pandas
 Pillow
 python-dotenv
-fastapi
+fastapi[standard]
 pre-commit
