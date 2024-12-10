@@ -2,16 +2,18 @@ import json
 import re
 import logging
 
+
 def extract_json(text):
     """
     Extrait le JSON d'une chaîne de caractères.
     """
     try:
-        json_str = re.search(r'\{.*\}', text, re.DOTALL).group()
+        json_str = re.search(r"\{.*\}", text, re.DOTALL).group()
         return json.loads(json_str)
     except Exception as e:
         logging.error(f"Erreur lors de l'extraction du JSON: {str(e)}")
         raise e
+
 
 def generate_slug(keyword):
     """
@@ -21,7 +23,7 @@ def generate_slug(keyword):
     # Mettre en minuscules
     slug = keyword.lower()
     # Supprimer les caractères spéciaux
-    slug = re.sub(r'[^\w\s-]', '', slug)
+    slug = re.sub(r"[^\w\s-]", "", slug)
     # Remplacer les espaces et les underscores par des tirets
-    slug = re.sub(r'[\s_]+', '-', slug)
+    slug = re.sub(r"[\s_]+", "-", slug)
     return slug

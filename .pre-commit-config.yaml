@@ -1,0 +1,44 @@
+default_language_version:
+  python: python3.12
+repos:
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [
+          pandas-stubs,
+          uvicorn, 
+          fastapi,
+          types-requests, 
+          Pillow,
+          openai,
+          python-dotenv
+          ]
+        args: [
+          "--warn-return-any",
+          "--warn-unused-configs",
+          "--no-implicit-optional",
+          # "--ignore-missing-imports"
+          ]
+        # trigger for commits changing Python files
+        types: [python]
+        # use require_serial so that script
+        # is only called once per commit
+        require_serial: true
+        # print the number of files as a sanity-check
+        verbose: true
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.2.2
+    hooks:
+      - id: ruff
+        args: [
+          "--fix",
+          "--exclude",
+          "*.ipynb"
+        ]
+      - id: ruff-format
+        args: [
+          "--exclude",
+          "*.ipynb"
+        ]
+
