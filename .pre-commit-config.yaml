@@ -12,7 +12,8 @@ repos:
           types-requests, 
           Pillow,
           openai,
-          python-dotenv
+          python-dotenv,
+          types-requests
           ]
         args: [
           "--warn-return-any",

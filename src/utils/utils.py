@@ -2,6 +2,8 @@ import json
 import re
 import logging
 
+from dotenv import load_dotenv
+
 
 def extract_json(text):
     """

@@ -1,6 +1,7 @@
 ##########################  CUSTOM ##################################
 .vscode/
-
+.ruff_cache/
+test.py
 ##########################  DEFAULT FROM GITHUB ##################################
 # Byte-compiled / optimized / DLL files
 __pycache__/
