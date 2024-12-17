@@ -28,7 +28,7 @@ class SemRushClient:
 
     def _make_request(
         self, endpoint: str, params: Dict[str, Any], max_results: Optional[int] = 10
-    ) -> Dict[str, Any]:
+    ) -> requests.Response:
         """
         Make a GET request to the SEMrush API.
 
@@ -59,32 +59,79 @@ class SemRushClient:
         report_string = response.text.strip("\r")
         return pd.read_csv(io.StringIO(report_string), sep=";")
 
-    def get_analytics_report(
+    def get_domain_report(
         self,
         report_type: str,
         domain: str,
-        region: str = "us",
-        expect_csv: bool = True,
+        region: Optional[str] = None,
+        expect_csv: Optional[bool] = True,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> pd.DataFrame | requests.Response:
         """
-        Fetch any type of analytics report for a given domain by specifying the report type.
+        Sends API request and gets a SemRush a report for a given domain by specifying the report type.
 
         :param report_type: The type of report to fetch (e.g., "domain_overview", "domain_organic", "domain_adwords").
         :param domain: The domain to analyze (e.g., "example.com").
-        :param database: The database region (default: "us").
+        :param region: The database region (e.g.: fr, us, ...). If no value is given, the report will evaluate all regions.
+        :param expect_csv: Indicate if the API response will be in raw CSV text.
         :param kwargs: Additional query parameters specific to the report type.
-        :return: A dictionary containing the report data.
+
+        :return: A pandas DataFrame containing the report data.
         """
         endpoint = ""
         params = {
             "type": report_type,
             "domain": domain,
-            "database": region,
         }
+        if region:
+            params["database"] = region
         params.update(kwargs)  # Add any additional parameters provided by the user
         response = self._make_request(endpoint, params)
         return self._process_api_response(response) if expect_csv else response
 
-    def get_domain_report(self, domain) -> pd.DataFrame:
-        return self.get_analytics_report("domain_rank", domain)
+    def get_keyword_report(
+        self,
+        report_type: str,
+        phrase: str,
+        region: Optional[str] = None,
+        expect_csv: Optional[bool] = True,
+        **kwargs,
+    ) -> pd.DataFrame | requests.Response:
+        """
+        Sends API request and gets a SemRush a report for a given keyword by specifying the report type.
+
+        :param report_type: The type of report to fetch (e.g., "phrase_this", "phrase_all", "phrase_these").
+        :param phrase: A keyword or keyword expression you'd like to investigate.
+        :param region: The database region (e.g.: fr, us, ...). If no value is given, the report will evaluate all regions.
+        :param expect_csv: Indicate if the API response will be in raw CSV text.
+        :param kwargs: Additional query parameters specific to the report type.
+
+        :return: A pandas DataFrame containing the report data.
+        """
+        endpoint = ""
+        params = {
+            "type": report_type,
+            "phrase": phrase,
+        }
+        if region:
+            params["database"] = region
+        params.update(kwargs)  # Add any additional parameters provided by the user
+        response = self._make_request(endpoint, params)
+        return self._process_api_response(response) if expect_csv else response
+
+    def get_kwd_overview_for_region(
+        self, phrase, region: Optional[str] = "fr"
+    ) -> pd.DataFrame | requests.Response:
+        """
+        Sends API request and gets a SemRush a report for a given keyword by specifying the report type.
+
+        :param phrase: A keyword or keyword expression you'd like to investigate.
+        :param region: The database region (e.g.: fr, us, ...). If no value is given, the report will evaluate all regions.
+        :param expect_csv: Indicate if the API response will be in raw CSV text.
+        :param kwargs: Additional query parameters specific to the report type.
+
+        :return: A pandas DataFrame containing the report data.
+        """
+        return self.get_keyword_report(
+            report_type="phrase_this", phrase=phrase, region=region
+        )
