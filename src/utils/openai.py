@@ -7,7 +7,7 @@ import io
 import requests
 
 # Charger les variables d'environnement depuis .env
-load_dotenv(r"C:\Users\aavia\GitProjects\For_artur\.env")
+load_dotenv()
 
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
