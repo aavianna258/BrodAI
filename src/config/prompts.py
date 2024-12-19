@@ -22,7 +22,7 @@ class Prompts:
             with open(prompts_file, "r", encoding="utf-8") as f:
                 prompts = json.load(f)
             logging.debug(f"Prompts chargés depuis '{prompts_file}'.")
-            self.prompts = Dict(prompts)
+            self.prompts = dict(prompts)
         except json.JSONDecodeError as e:
             logging.error(
                 f"Erreur de décodage JSON dans le fichier de prompts: {str(e)}"
