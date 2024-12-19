@@ -1,4 +1,7 @@
-from typing import List, TypedDict
+from typing import Dict, List, TypedDict
+from src.config.prompts import Prompts
+from src.utils.other_utils import extract_keywords_json
+from src.utils.openai import OpenAIClient
 
 
 class SemRushKeyword(TypedDict):
@@ -15,11 +18,24 @@ class SemRushReport(TypedDict):
 
 
 class KeywordResearcher:
-    def __init__(self, url):
+    def __init__(self, url: str = ""):
         self.url = url
         self.current_top_keywords: List = list()
 
-    def get_current_top_kwds(self):
+    def generate_related_keywords(self, keyword: str) -> Dict:
+        """Generates a set of keywords related to the  set of keywords given."""
+        llm_client = OpenAIClient()
+        preset_prompts = Prompts().get_prompts()
+
+        prompt = f"keyword: {keyword}" + preset_prompts["generate_related_keywords"]
+        response_text = llm_client.call_api(
+            api_type="text", model="gpt-4o", prompt=prompt
+        )
+        response_json = extract_keywords_json(response_text)
+
+        return response_json
+
+    def get_current_top_kwds(self) -> List[SemRushKeyword]:
         """TODO: Calls SemRush API and gets current top keywords"""
         # gets current top kwds if that has not been done yet
         if self.current_top_keywords is not []:
@@ -55,8 +71,6 @@ class KeywordResearcher:
         top_kwds = self.get_current_top_kwds()
 
         # optimises top kwds with OpenAI API and SemRush API
-        best_kwds: List[
-            SemRushKeyword
-        ] = top_kwds  # TODO: remove, this is only a placeholder
+        best_kwds = top_kwds  # TODO: remove, this is only a placeholder
 
         return best_kwds

@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List
 from httpx import RequestError
 from pydantic import BaseModel
 from fastapi import FastAPI
@@ -24,12 +24,12 @@ class TrafficReport(BaseModel):
 
 
 @app.get("/")
-def read_root():
+def read_root() -> Dict[str, str]:
     return {"Hello": "World"}
 
 
 @app.post("/generate_traffic_report")
-def generate_traffic_report_and_preview(url: str):
+def generate_traffic_report_and_preview(url: str) -> Dict:
     try:
         # extract text from URL
         page_content = ProductPageExtractor(url).get_url_content()
@@ -52,7 +52,9 @@ def generate_traffic_report_and_preview(url: str):
 
 
 @app.post("/optimise_product_page")
-def optimise_product_page(product_page_content: str, target_keywords: List[str]):
+def optimise_product_page(
+    product_page_content: str, target_keywords: List[str]
+) -> str | Any:
     try:
         optimised_content = ProductPageOptimiser(
             product_page_content, target_keywords

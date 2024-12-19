@@ -65,7 +65,7 @@ class SemRushClient:
         domain: str,
         region: Optional[str] = None,
         expect_csv: Optional[bool] = True,
-        **kwargs,
+        **kwargs: str,
     ) -> pd.DataFrame | requests.Response:
         """
         Sends API request and gets a SemRush a report for a given domain by specifying the report type.
@@ -95,7 +95,7 @@ class SemRushClient:
         phrase: str,
         region: Optional[str] = None,
         expect_csv: Optional[bool] = True,
-        **kwargs,
+        **kwargs: str,
     ) -> pd.DataFrame | requests.Response:
         """
         Sends API request and gets a SemRush a report for a given keyword by specifying the report type.
@@ -120,7 +120,7 @@ class SemRushClient:
         return self._process_api_response(response) if expect_csv else response
 
     def get_kwd_overview_for_region(
-        self, phrase, region: Optional[str] = "fr"
+        self, phrase: str, region: Optional[str] = "fr"
     ) -> pd.DataFrame | requests.Response:
         """
         Sends API request and gets a SemRush a report for a given keyword by specifying the report type.
