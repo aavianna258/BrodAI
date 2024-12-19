@@ -22,7 +22,7 @@ class OpenAIClient:
             )
         self.client = openai.OpenAI(api_key=self.api_key)
 
-    def call_api(self, api_type: str, model: str, prompt: str, **kwargs) -> Any:
+    def call_api(self, api_type: str, model: str, prompt: str, **kwargs: Any) -> Any:
         """Calls the OpenAI API to generate text or images."""
 
         try:

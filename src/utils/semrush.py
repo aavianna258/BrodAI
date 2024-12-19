@@ -28,7 +28,7 @@ class SemRushClient:
 
     def _make_request(
         self, endpoint: str, params: Dict[str, Any], max_results: Optional[int] = 10
-    ) -> Dict[str, Any]:
+    ) -> requests.Response:
         """
         Make a GET request to the SEMrush API.
 
@@ -65,8 +65,8 @@ class SemRushClient:
         domain: str,
         region: str = "us",
         expect_csv: bool = True,
-        **kwargs,
-    ) -> Dict[str, Any]:
+        **kwargs: str,
+    ) -> pd.DataFrame | requests.Response:
         """
         Fetch any type of analytics report for a given domain by specifying the report type.
 
@@ -86,5 +86,5 @@ class SemRushClient:
         response = self._make_request(endpoint, params)
         return self._process_api_response(response) if expect_csv else response
 
-    def get_domain_report(self, domain) -> pd.DataFrame:
+    def get_domain_report(self, domain: str) -> pd.DataFrame | requests.Response:
         return self.get_analytics_report("domain_rank", domain)

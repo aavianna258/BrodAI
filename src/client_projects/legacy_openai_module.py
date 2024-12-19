@@ -12,7 +12,7 @@ load_dotenv(r"C:\Users\aavia\GitProjects\For_artur\.env")
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-def generate_article(prompt, keyword, links_html):
+def generate_article(prompt, keyword, links_html):  # type: ignore
     """
     Génère un article en utilisant l'API OpenAI.
     """
@@ -34,7 +34,7 @@ def generate_article(prompt, keyword, links_html):
         raise e
 
 
-def generate_image(keyword):
+def generate_image(keyword):  # type: ignore
     """
     Génère une image en utilisant l'API OpenAI.
     """
@@ -46,7 +46,7 @@ def generate_image(keyword):
             size="1024x1024",
         )
         image_url = response.data[0].url
-        image_response = requests.get(image_url)
+        image_response = requests.get(str(image_url))
         image_response.raise_for_status()
         image = Image.open(io.BytesIO(image_response.content))
 

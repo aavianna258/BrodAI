@@ -4,4 +4,3 @@ python-dotenv
 fastapi[standard]
 pre-commit
 requests
-mypy

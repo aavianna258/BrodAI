@@ -3,17 +3,17 @@ import requests
 import logging
 
 
-class WordPressClient:
-    def __init__(self, url, username, password):
+class WordPressClient:  # [type]: ignore
+    def __init__(self, url, username, password):  # type: ignore
         self.url = url.rstrip("/")
-        self.auth = self._get_auth_header(username, password)
+        self.auth = self._get_auth_header(username, password)  # type: ignore
 
-    def _get_auth_header(self, username, password):
+    def _get_auth_header(self, username, password):  # type: ignore
         credentials = f"{username}:{password}"
         token = base64.b64encode(credentials.encode())
         return {"Authorization": f'Basic {token.decode("utf-8")}'}
 
-    def upload_image(self, image_bytes, title):
+    def upload_image(self, image_bytes, title):  # type: ignore
         """
         Télécharge une image depuis une URL et l'upload sur WordPress.
         Retourne l'ID de l'image uploadée.
@@ -35,7 +35,7 @@ class WordPressClient:
             logging.error(f"Erreur lors de l'upload de l'image: {str(e)}")
             raise e
 
-    def create_post(self, title, content, featured_media=None):
+    def create_post(self, title, content, featured_media=None):  # type: ignore
         """
         Crée un nouvel article sur WordPress.
         """

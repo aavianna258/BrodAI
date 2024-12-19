@@ -16,10 +16,13 @@ repos:
           types-requests
           ]
         args: [
+          "--exclude",
+          "*legacy*",
           "--warn-return-any",
           "--warn-unused-configs",
           "--no-implicit-optional",
-          "--ignore-missing-imports"
+          "--ignore-missing-imports",
+          "--disallow-untyped-defs",
           ]
         # trigger for commits changing Python files
         types: [python]

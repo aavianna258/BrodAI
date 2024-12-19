@@ -35,7 +35,7 @@ class KeywordResearcher:
 
         return response_json
 
-    def get_current_top_kwds(self):
+    def get_current_top_kwds(self) -> List[SemRushKeyword]:
         """TODO: Calls SemRush API and gets current top keywords"""
         # gets current top kwds if that has not been done yet
         if self.current_top_keywords is not []:
@@ -71,8 +71,6 @@ class KeywordResearcher:
         top_kwds = self.get_current_top_kwds()
 
         # optimises top kwds with OpenAI API and SemRush API
-        best_kwds: List[
-            SemRushKeyword
-        ] = top_kwds  # TODO: remove, this is only a placeholder
+        best_kwds = top_kwds  # TODO: remove, this is only a placeholder
 
         return best_kwds

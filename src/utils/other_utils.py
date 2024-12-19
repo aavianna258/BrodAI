@@ -3,7 +3,7 @@ import re
 from typing import Dict
 
 
-def extract_json(text):
+def extract_json(text: str) -> Dict:
     first_brace = text.find("{")
     last_brace = text.rfind("}")
 
@@ -12,7 +12,7 @@ def extract_json(text):
 
     json_str = text[first_brace : last_brace + 1]
     try:
-        return json.loads(json_str)
+        return dict(json.loads(json_str))
     except json.JSONDecodeError as e:
         raise json.JSONDecodeError(f"Erreur de décodage JSON: {e.msg}", e.doc, e.pos)
 
@@ -39,7 +39,7 @@ def extract_keywords_json(text: str) -> Dict:
     # Remplacer les ensembles (sets) par des listes pour rendre la chaîne compatible avec JSON
     # Cela suppose que les ensembles ne contiennent que des chaînes de caractères
     # et qu'il n'y a pas de structures imbriquées complexes.
-    def sets_to_lists(match):
+    def sets_to_lists(match: re.Match) -> str:
         key = match.group(1)
         items = match.group(2).split(",")
         # Nettoyer les espaces et les guillemets
@@ -61,7 +61,7 @@ def extract_keywords_json(text: str) -> Dict:
     return Dict(data)
 
 
-def generate_slug(keyword):
+def generate_slug(keyword: str) -> str:
     """
     Génère un slug à partir du mot-clé en le mettant en minuscules,
     en supprimant les caractères spéciaux et en remplaçant les espaces par des tirets.
