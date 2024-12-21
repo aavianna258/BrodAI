@@ -1,9 +1,14 @@
 import io
 import pandas as pd
 import requests
-from typing import Dict, Any, Optional
+from typing import Dict, TypedDict, Any, Optional
 import os
 
+
+class BrodAIKeyword(TypedDict):
+    keyword : str
+    traffic: int
+    difficulty: float
 
 class SemRushClient:
     """
@@ -88,3 +93,17 @@ class SemRushClient:
 
     def get_domain_report(self, domain: str) -> pd.DataFrame | requests.Response:
         return self.get_analytics_report("domain_rank", domain)
+    
+    def get_keyword_report(self, keyword : str) -> BrodAIKeyword:
+        """ Takes a keyword as an argument and returns the metrics for a given keywords.
+        BrodAIKeyword:
+        {
+        "keyword":"SEO",
+        "traffic":1000,
+        "Difficulty":0.2
+        }
+
+        """
+
+        """TODO : get keyword metrics """
+        return 
