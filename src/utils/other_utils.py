@@ -17,7 +17,7 @@ def extract_json(text: str) -> Dict:
         raise json.JSONDecodeError(f"Erreur de décodage JSON: {e.msg}", e.doc, e.pos)
 
 
-def extract_keywords_json(text: str) -> Dict[str, List(str)]:
+def extract_keywords_json(text: str) -> Dict[str, List[str]]:
     """
     Extrait le bloc JSON du texte fourni et le convertit en un dictionnaire Python.
 

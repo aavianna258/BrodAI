@@ -9,8 +9,9 @@ class BrodAIKeyword(TypedDict):
     traffic : int
     difficulty : float
     intent : str
+    performance_score: float
 
-class SemRushReport(TypedDict):
+class BrodAIReport(TypedDict):
     url: str
     monthly_traffic: int
     top_keywords: List[BrodAIKeyword]
@@ -19,11 +20,11 @@ class UrlAnalyzer:
     def __init__(self,url:str = ""):
         self.url=url
 
-    def generate_sem_rush_report(self) -> SemRushReport:
+    def generate_sem_rush_report(self) -> BrodAIReport:
         """TODO: Calls relevant methods and creaters the SemRush report on the current state of the product page"""
         url = self.url
         top_kwds = self.research_best_keywords()
-        report = SemRushReport(
+        report = BrodAIReport(
             {"url": url, "monthly_traffic": 0, "top_keywords": top_kwds}
         )
         return report
