@@ -3,11 +3,18 @@ from urllib.request import urlopen
 from lxml import html
 from lxml.doctestcompare import (
     LHTMLOutputChecker,
-)  # This is the class that will be used to compare HTML content
+)
 
 
 class WebpageScrapper:
     def __init__(self, url: str, **kwargs: dict) -> None:
+        """
+        Initializes the WebpageScrapper with a URL and optional HTML parser arguments.
+
+        Args:
+            url (str): The URL of the webpage to scrape.
+            **kwargs (dict): Optional keyword arguments for the HTML parser.
+        """
         self.url = url
         page = urlopen(self.url)
         if len(kwargs) > 0:
@@ -25,12 +32,30 @@ class WebpageScrapper:
         self.html_doc_root = self.html_doc_tree.getroot()
 
     def open_html_in_browser(self) -> None:
+        """
+        Opens the parsed HTML document in a web browser.
+        """
         html.open_in_browser(self.html_doc_tree)
 
     def get_html_tree(self) -> Any:
+        """
+        Returns the parsed HTML tree.
+
+        Returns:
+            Any: The parsed HTML tree.
+        """
         return self.html_doc_tree
 
     def compare_page_to_html(self, html_doc_root: html.HtmlElement) -> bool:
+        """
+        Compares the current HTML document to another HTML document.
+
+        Args:
+            html_doc_root (html.HtmlElement): The root element of the HTML document to compare against.
+
+        Returns:
+            bool: True if the documents are the same, False otherwise.
+        """
         comparer = LHTMLOutputChecker()
         comparison_result = bool(
             comparer.compare_docs(self.html_doc_tree.getroot(), html_doc_root)
@@ -38,7 +63,12 @@ class WebpageScrapper:
         return comparison_result
 
     def get_url_content(self) -> str:
-        """Extracts the HTML content from the URL"""
+        """
+        Extracts the HTML content from the URL.
+
+        Returns:
+            str: The HTML content of the URL.
+        """
         return ""
 
 
@@ -75,6 +105,6 @@ Other keyword arguments:
     - a parser target object that will receive the parse events
 - schema   
     - an XMLSchema to validate against
-    Note that you should avoid sharing parsers between threads 
-    for performancereasons.
+        Note that you should avoid sharing parsers between threads 
+        for performance reasons.
 """
