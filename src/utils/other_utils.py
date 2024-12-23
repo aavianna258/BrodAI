@@ -58,7 +58,7 @@ def extract_keywords_json(text: str) -> Dict[str, List[str]]:
     except json.JSONDecodeError as e:
         raise ValueError("Erreur lors de l'analyse du JSON corrigé.") from e
 
-    return Dict(data)
+    return dict(data)
 
 
 def generate_slug(keyword: str) -> str:

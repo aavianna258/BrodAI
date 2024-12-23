@@ -2,13 +2,34 @@ from typing import Any, Dict, List
 from httpx import RequestError
 from pydantic import BaseModel
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from requests import RequestException
-from keyword_research.keyword_researcher import KeywordResearcher
-from product_pages.product_page_extractor import ProductPageExtractor
-from product_pages.product_page_optimiser import ProductPageOptimiser
+from src.services.keyword_research import KeywordResearcher
+from src.product_pages.product_page_extractor import ProductPageExtractor
+from src.product_pages.product_page_optimiser import ProductPageOptimiser
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",  # ton front
+    "http://127.0.0.1:3000",
+    # "*",  # éventuellement plus large si nécessaire
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],   # autorise toutes les méthodes (POST, GET, OPTIONS, etc.)
+    allow_headers=["*"],   # autorise tous les headers
+)
+
+class KeywordRequest(BaseModel):
+    main_keyword: str
 
 class EvaluatedKeyword(BaseModel):
     keyword: str
@@ -64,3 +85,37 @@ def optimise_product_page(
 
     except RequestException:
         raise RequestError("There was an issue in the system. Please try again later.")
+
+
+@app.post("/keyword_research")
+def keyword_research(request: KeywordRequest ):
+    main_kw= request.main_keyword
+
+    researcher=KeywordResearcher(main_keyword=main_kw)
+
+    top_keywords = researcher.get_top_keywords()
+
+    return {
+        "target_kw_report": top_keywords  
+    }
+
+
+@app.post("/keyword_research_test")
+def keyword_research():
+    # on revoie un test
+    return {
+        "target_kw_report": [
+            {
+                "keyword": "SEO tips",
+                "traffic": 1000,
+                "difficulty": 0.2,
+                "performance_score": 60,
+            },
+            {
+                "keyword": "SEO guide",
+                "traffic": 800,
+                "difficulty": 0.4,
+                "performance_score": 35,
+            }
+        ]
+    }

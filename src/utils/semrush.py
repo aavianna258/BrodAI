@@ -94,16 +94,55 @@ class SemRushClient:
     def get_domain_report(self, domain: str) -> pd.DataFrame | requests.Response:
         return self.get_analytics_report("domain_rank", domain)
     
-    def get_keyword_report(self, keyword : str) -> BrodAIKeyword:
-        """ Takes a keyword as an argument and returns the metrics for a given keywords.
-        BrodAIKeyword:
-        {
-        "keyword":"SEO",
-        "traffic":1000,
-        "Difficulty":0.2
+
+    def get_keyword_report(self, keyword: str) -> BrodAIKeyword:
+        """
+        Takes a keyword as an argument and returns the metrics for a given keyword.
+
+        :param keyword: The keyword to analyze.
+        :return: A dictionary containing keyword metrics.
+        """
+        endpoint=""
+        params = {
+            "type": "phrase_this",            # Type de rapport pour les mots-clés
+            "phrase": keyword,                # Mot-clé à analyser
+            "database": "us",                 # country database
+            "export_columns": "Ph,Nq,Co"      # Export Columns
         }
 
-        """
+        try:
+            response = self._make_request(endpoint, params)
 
-        """TODO : get keyword metrics """
-        return 
+            df = self._process_api_response(response)
+
+            if df.empty:
+                raise ValueError(f"No data returned for keyword: {keyword}")
+
+            # Extraire la première ligne des résultats
+
+            row = df.iloc[0]
+
+            # Construire le dictionnaire BrodAIKeyword
+            keyword_data = BrodAIKeyword(
+                keyword=row["Keyword"],
+                traffic=int(row["Search Volume"]),
+                difficulty=float(row["Competition"])
+            )
+
+            return keyword_data
+
+        except Exception as e:
+            # Vous pouvez ajouter un logging ici si nécessaire
+            raise Exception(f"Failed to get keyword report for '{keyword}': {e}")
+        
+
+
+    def get_keyword_report_test(self, keyword: str) -> BrodAIKeyword:
+        """
+        Return fake data for testing so we don't call the real API.
+        """
+        return {
+            "keyword": keyword,
+            "traffic": 999,
+            "difficulty": 0.1
+        }

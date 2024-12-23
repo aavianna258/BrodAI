@@ -37,7 +37,7 @@ class KeywordResearcher:
         """ scoring function for keyword based on volume and difficulty
         just for test, we will improve it after
         """
-        return round(volume / (1 + difficulty**2), 2)
+        return round(volume / (0.1 + difficulty**2), 2)
     
 
     def get_top_keywords(self) -> List[BrodAIKeyword]:
@@ -63,7 +63,7 @@ class KeywordResearcher:
                 score = self._compute_performance_score(volume,difficulty)
                 candidates.append(BrodAIKeyword(
                     keyword=kw,
-                    volume=volume,
+                    traffic=volume,
                     difficulty=difficulty,
                     performance_score=score
                 ))
