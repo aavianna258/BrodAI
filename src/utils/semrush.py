@@ -4,6 +4,8 @@ import requests
 from typing import Dict, Any, Optional
 import os
 
+from src.config.brodai_global_classes import BrodAIKeyword
+
 
 class SemRushClient:
     """
@@ -64,9 +66,8 @@ class SemRushClient:
         report_type: str,
         domain: str,
         region: Optional[str] = None,
-        expect_csv: Optional[bool] = True,
         **kwargs: str,
-    ) -> pd.DataFrame | requests.Response:
+    ) -> pd.DataFrame:
         """
         Sends API request and gets a SemRush a report for a given domain by specifying the report type.
 
@@ -87,16 +88,17 @@ class SemRushClient:
             params["database"] = region
         params.update(kwargs)  # Add any additional parameters provided by the user
         response = self._make_request(endpoint, params)
-        return self._process_api_response(response) if expect_csv else response
+        if not isinstance(response, pd.DataFrame):
+            raise ValueError(f"API response not in CSV format. Error: {response.text}")
+        return self._process_api_response(response)
 
     def get_keyword_report(
         self,
         report_type: str,
         phrase: str,
         region: Optional[str] = None,
-        expect_csv: Optional[bool] = True,
         **kwargs: str,
-    ) -> pd.DataFrame | requests.Response:
+    ) -> pd.DataFrame:
         """
         Sends API request and gets a SemRush a report for a given keyword by specifying the report type.
 
@@ -117,11 +119,15 @@ class SemRushClient:
             params["database"] = region
         params.update(kwargs)  # Add any additional parameters provided by the user
         response = self._make_request(endpoint, params)
-        return self._process_api_response(response) if expect_csv else response
+
+        if not isinstance(response, pd.DataFrame):
+            raise ValueError(f"API response not in CSV format. Error: {response.text}")
+
+        return self._process_api_response(response)
 
     def get_kwd_overview_for_region(
         self, phrase: str, region: Optional[str] = "fr"
-    ) -> pd.DataFrame | requests.Response:
+    ) -> pd.DataFrame:
         """
         Sends API request and gets a SemRush a report for a given keyword by specifying the report type.
 
@@ -135,3 +141,42 @@ class SemRushClient:
         return self.get_keyword_report(
             report_type="phrase_this", phrase=phrase, region=region
         )
+
+    def get_keyword_metrics(self, keyword: str) -> BrodAIKeyword:
+        """
+        Retrieves and returns the metrics for a given keyword.
+        This method takes a keyword as an argument, fetches the keyword report
+        from SemRush, and extracts the relevant metrics such as search volume
+        and competition.
+
+        If no data is returned for the given keyword, it raises
+        a ValueError.
+
+        :type keyword: str
+        :return: An instance of BrodAIKeyword containing the keyword metrics.
+        :rtype: BrodAIKeyword
+        :raises ValueError: If no data is returned for the given keyword.
+        """
+        report_df = self.get_keyword_report(
+            report_type="phrase_this",
+            phrase=keyword,
+            region="us",
+            export_columns="Ph,Nq,Co",
+        )
+
+        if report_df.empty:
+            raise ValueError(f"No data returned for keyword: {keyword}")
+
+        # Extraire la première ligne des résultats
+
+        row = report_df.iloc[0]
+
+        # Construire le dictionnaire BrodAIKeyword
+        keyword_data = BrodAIKeyword(
+            keyword=str(row["Keyword"]),
+            traffic=int(row["Search Volume"]),
+            difficulty=float(row["Competition"]),
+            performance_score=-1.0,  # negative number to indicate that it hasn't been computed yet
+        )
+
+        return keyword_data

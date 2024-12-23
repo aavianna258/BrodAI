@@ -5,3 +5,4 @@ fastapi[standard]
 pre-commit
 requests
 lxml
+openai
