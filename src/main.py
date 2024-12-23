@@ -4,8 +4,8 @@ from pydantic import BaseModel
 from fastapi import FastAPI
 from requests import RequestException
 from keyword_research.keyword_researcher import KeywordResearcher
-from product_pages.product_page_extractor import ProductPageExtractor
 from product_pages.product_page_optimiser import ProductPageOptimiser
+from src.utils.webpage_scrapper import WebpageScrapper
 
 app = FastAPI()
 
@@ -32,7 +32,7 @@ def read_root() -> Dict[str, str]:
 def generate_traffic_report_and_preview(url: str) -> Dict:
     try:
         # extract text from URL
-        page_content = ProductPageExtractor(url).get_url_content()
+        page_content = WebpageScrapper(url).get_url_content()
 
         # generate SemRush report for the current search engine performance
         researcher = KeywordResearcher(page_content)
