@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, List
 from src.config.prompts import Prompts
 from src.utils.other_utils import extract_keywords_json
 from src.utils.openai import OpenAIClient
@@ -11,7 +11,9 @@ class KeywordResearcher:
         self.main_keyword = main_keyword
         self.url = url
 
-    def generate_related_keywords(self) -> Dict[str, List[str]]:
+    def generate_related_keywords(
+        self,
+    ) -> Any:  # -> Dict[str, List[str]]: TODO Correct this
         """Generates a set of keywords related to the  set of keywords given."""
         llm_client = OpenAIClient()
         preset_prompts = Prompts().get_prompts()
