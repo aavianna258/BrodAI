@@ -4,7 +4,7 @@ import requests
 from typing import Dict, Any, Optional
 import os
 
-from src.config.brodai_global_classes import BrodAIKeyword
+from src.packages.config.brodai_global_classes import BrodAIKeyword
 
 
 class SemRushClient:
@@ -88,8 +88,11 @@ class SemRushClient:
             params["database"] = region
         params.update(kwargs)  # Add any additional parameters provided by the user
         response = self._make_request(endpoint, params)
+
+        """
         if not isinstance(response, pd.DataFrame):
-            raise ValueError(f"API response not in CSV format. Error: {response.text}")
+            raise ValueError(f"API response not in CSV format. Error: {response.text}")"""
+        
         return self._process_api_response(response)
 
     def get_keyword_report(

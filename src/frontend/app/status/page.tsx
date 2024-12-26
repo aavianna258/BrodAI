@@ -37,17 +37,33 @@ export default function StatusPage() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
+  
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // show placeholders for 2 seconds
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // optional: show placeholders for 2 seconds
+        // await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        const res = await fetch(`/api/mockAnalysis?url=${encodeURIComponent(domain)}`);
-        const json = await res.json();
+        // Call the FASTAPI backend at /analysis
+        const response = await fetch('http://localhost:8000/analysis', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain: domain })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Backend error: ${response.statusText}`);
+        }
+
+        const json = await response.json();
+        console.log("Backend /analysis result:", json);
+
+        // We expect shape: { status: number, data: { ... } }
         if (json.status === 200) {
           setAnalysis(json.data);
+        } else {
+          console.warn('Analysis returned non-200:', json);
         }
       } catch (error) {
         console.error('Error fetching analysis data:', error);
@@ -64,7 +80,7 @@ export default function StatusPage() {
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div>
             <Title level={2} style={{ marginBottom: 4 }}>
-              SEO Audit Results
+              BrodAI SEO Audit
             </Title>
             <Text type="secondary">
               <span style={{ marginRight: 8 }}>🌐</span>

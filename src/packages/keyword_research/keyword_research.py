@@ -1,8 +1,8 @@
 from typing import Any, List
-from src.config.prompts import Prompts
-from src.utils.other_utils import extract_keywords_json
-from src.utils.openai import OpenAIClient
-from src.utils.semrush import BrodAIKeyword, SemRushClient
+from src.packages.config.prompts import Prompts
+from src.packages.utils.other_utils import extract_keywords_json
+from src.packages.utils.openai import OpenAIClient
+from src.packages.utils.semrush import BrodAIKeyword, SemRushClient
 import logging
 
 

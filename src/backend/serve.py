@@ -1,13 +1,15 @@
 from typing import Any, Dict, List
+from src.packages.seo_analyzer.seo_analyzer import SeoAnalyzer
 from httpx import RequestError
 from pydantic import BaseModel
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from requests import RequestException
-from product_pages.product_page_optimiser import ProductPageOptimiser
-from src.config.brodai_global_classes import BrodAIKeyword
-from src.keyword_research.keyword_research import KeywordResearcher
+#from packages.product_pages.product_page_optimiser import ProductPageOptimiser
+from src.packages.config.brodai_global_classes import BrodAIKeyword
+from src.packages.keyword_research.keyword_research import KeywordResearcher
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
@@ -26,6 +28,14 @@ app.add_middleware(
     allow_methods=["*"],  # autorise toutes les méthodes (POST, GET, OPTIONS, etc.)
     allow_headers=["*"],  # autorise tous les headers
 )
+
+
+class AnalysisRequest(BaseModel):
+    domain: str
+
+class AnalysisResponse(BaseModel):
+    status: int
+    data: Dict[str, Any]
 
 
 class KeywordRequest(BaseModel):
@@ -120,3 +130,28 @@ def mock_keyword_research() -> Dict[str, List[BrodAIKeyword]]:
             },
         ]
     }
+
+
+
+@app.post("/analysis", response_model=AnalysisResponse)
+def analyze_domain(payload: AnalysisRequest):
+    """
+    This route calls our SeoAnalyzer to run 
+    a domain analysis using SEMRush, 
+    then returns the results.
+    """
+    domain = payload.domain
+
+    # 1) Initialize the SeoAnalyzer
+    analyzer = SeoAnalyzer(api_key=os.getenv("SEMRUSH_API_KEY"))
+
+    # 2) Analyze
+    try:
+        analysis_data = analyzer.analyze_domain(domain)
+        return AnalysisResponse(status=200, data=analysis_data)
+    except Exception as e:
+        return AnalysisResponse(
+            status=500,
+            data={"error": f"Failed to analyze domain: {str(e)}"}
+        )
+    

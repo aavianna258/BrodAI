@@ -45,7 +45,6 @@ export default function AnalysisResult({ analysis, accentColor }: AnalysisResult
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <OverallScoreCard
-        scoreLetter={analysis.scoreLetter}
         performanceRating={analysis.performanceRating}
         nextSteps={analysis.nextSteps}
         scoreNumeric={analysis.scoreNumeric}
