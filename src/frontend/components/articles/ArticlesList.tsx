@@ -14,10 +14,10 @@ interface Article {
 
 interface ArticlesListProps {
   articles: Article[];
-  highlightKeywords: (snippet: string, keywords: string[]) => JSX.Element;
+  // highlightKeywords is removed because it's no longer used
 }
 
-export default function ArticlesList({ articles, highlightKeywords }: ArticlesListProps) {
+export default function ArticlesList({ articles }: ArticlesListProps) {
   return (
     <List
       itemLayout="vertical"
@@ -38,8 +38,8 @@ export default function ArticlesList({ articles, highlightKeywords }: ArticlesLi
             }
           />
           <Paragraph style={{ fontSize: '1rem' }}>
-            {highlightKeywords(item.snippet, item.keywords)}{' '}
-            <Button type="link" style={{ paddingLeft: 0 }}>
+            {item.snippet}
+            <Button type="link" style={{ paddingLeft: 8 }}>
               Read more
             </Button>
           </Paragraph>

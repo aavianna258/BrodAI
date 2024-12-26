@@ -2,18 +2,15 @@
 "use clients";
 
 
-
-
 import 'antd/dist/reset.css';
 
 
 import './globals.css';
 
-import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 
-import NavBar from '@/components/NavBar'; // The NavBar from above
-
+import NavBar from '@/components/globals/NavBar'; // The NavBar from above
+import AppFooter from '@/components/globals/AppFooter';
 
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -23,6 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <NavBar />
         {children}
         {/* You can add a global footer here if you wish */}
+        <AppFooter />
       </body>
     </html>
   );

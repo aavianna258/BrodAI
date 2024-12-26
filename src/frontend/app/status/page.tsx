@@ -3,100 +3,82 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Layout, Card, Space, Typography } from 'antd';
-
-import StatusHero from '@/components/status/StatusHero';
-import ScoreSection from '@/components/status/ScoreSection';
-import TrafficOverview from '@/components/status/TrafficOverview';
-import KeywordDetails from '@/components/status/KeywordDetails';
-import StatusCTA from '@/components/status/StatusCTA';
+import { Layout, Typography, Space } from 'antd';
+import LoadingPlaceholder from '@/components/status/LoadingPlaceholder';
+import AnalysisResult from '@/components/status/AnalysisResult';
+import StatusCtaSection from '@/components/status/statusCtaSection';
 
 const { Content } = Layout;
-const { Text, Title } = Typography;
+const { Title, Text } = Typography;
 
 interface AnalysisData {
-  score: number;
-  monthlyTraffic: number;
-  avgMonthlyClicks: number;
-  reasonWhyScoreLow: string[];
-  details: { keyword: string; rating: string; position: number }[];
-  improvements: string[];
+  scoreNumeric: number;
+  scoreLetter: string;
+  performanceRating: string;
+  nextSteps: string[];
+  curatedKeywords: string[];
+  blogPosts: { title: string; snippet: string }[];
+  detailedKeywords: {
+    keyword: string;
+    currentPosition: number;
+    potentialTraffic: number;
+    competitionLevel: string;
+  }[];
+  improvementKeywords: {
+    keyword: string;
+    reason: string;
+  }[];
 }
 
 export default function StatusPage() {
+  const accentColor = '#3B82F6'; 
   const searchParams = useSearchParams();
-  const urlParam = searchParams.get('url') ?? 'your-website.com';
+  const domain = searchParams.get('url') ?? 'example.com';
 
+  const [loading, setLoading] = useState<boolean>(true);
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch(`/api/mockAnalysis?url=${encodeURIComponent(urlParam)}`);
+        // show placeholders for 2 seconds
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        const res = await fetch(`/api/mockAnalysis?url=${encodeURIComponent(domain)}`);
         const json = await res.json();
         if (json.status === 200) {
           setAnalysis(json.data);
         }
-      } catch (err) {
-        console.error('Error fetching analysis:', err);
+      } catch (error) {
+        console.error('Error fetching analysis data:', error);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
-  }, [urlParam]);
+  }, [domain]);
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Content style={{ margin: '24px' }}>
-        <Card style={{ borderRadius: 8, padding: 24 }}>
-          {loading ? (
-            <Text>Loading analysis...</Text>
-          ) : analysis ? (
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              {/* 1) Hero section */}
-              <StatusHero urlParam={urlParam} />
+    <Layout style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
+      <Content style={{ padding: '40px', maxWidth: 1000, margin: '0 auto' }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <div>
+            <Title level={2} style={{ marginBottom: 4 }}>
+              SEO Audit Results
+            </Title>
+            <Text type="secondary">
+              <span style={{ marginRight: 8 }}>🌐</span>
+              {domain}
+            </Text>
+          </div>
 
-              {/* 2) Score */}
-              <ScoreSection score={analysis.score} />
-
-              {/* 3) Traffic */}
-              <TrafficOverview
-                monthlyTraffic={analysis.monthlyTraffic}
-                avgMonthlyClicks={analysis.avgMonthlyClicks}
-              />
-
-              {/* 4) Pourquoi le score est bas */}
-              <div>
-                <Title level={5}>Why is my score low?</Title>
-                <ul>
-                  {analysis.reasonWhyScoreLow.map((r, idx) => (
-                    <li key={idx}>{r}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* 5) Détails mots-clés */}
-              <KeywordDetails details={analysis.details} />
-
-              {/* 6) Suggestions d’amélioration */}
-              <div>
-                <Title level={4}>How to Improve</Title>
-                <ul>
-                  {analysis.improvements.map((imp, idx) => (
-                    <li key={idx}>{imp}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* 7) CTA final */}
-              <StatusCTA />
-            </Space>
+          {loading || !analysis ? (
+            <LoadingPlaceholder />
           ) : (
-            <Text>Échec du chargement des données.</Text>
+            <AnalysisResult analysis={analysis} accentColor={accentColor} />
           )}
-        </Card>
+             <StatusCtaSection />
+        </Space>
       </Content>
     </Layout>
   );
