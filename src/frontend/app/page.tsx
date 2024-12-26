@@ -1,75 +1,145 @@
-// app/page.tsx
 'use client';
 
-import React from 'react';
-import { Typography, Row, Col, Space, Button, Divider } from 'antd';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import Features from '../components/Features';
 
+// Ant Design + Icons
+import { Layout, Menu, Card, Typography, Form, Input, Button, Space } from 'antd';
+import { ArrowDownOutlined } from '@ant-design/icons';
+
+// Next.js 13 "App Router" will treat this file as your Home Page (/).
+
+// 1. Dynamically load react-typed so it runs client-side only
+
+const { Header, Content } = Layout;
 const { Title, Paragraph } = Typography;
 
-// Adjust to match the actual NavBar height (64px, 80px, etc.)
-const NAVBAR_HEIGHT = 64;
+// 2. Simple NavBar using Menu "items" (no more children)
+function NavBar() {
+  const menuItems = [
+    {
+      key: 'home',
+      label: <Link href="/">Home</Link>,
+    },
+    {
+      key: 'status',
+      label: <Link href="/status?url=your-website.com">Status</Link>,
+    },
+    {
+      key: 'articles',
+      label: <Link href="/articles">Articles</Link>,
+    },
+  ];
+
+  return (
+    <Header style={{ backgroundColor: '#fff', boxShadow: '0 2px 8px #f0f1f2' }}>
+      <Menu
+        mode="horizontal"
+        defaultSelectedKeys={['home']}
+        style={{ borderBottom: 'none' }}
+        items={menuItems}
+      />
+    </Header>
+  );
+}
 
 export default function HomePage() {
+  const router = useRouter();
+  const [urlValue, setUrlValue] = useState('');
+
+  // On form submit, redirect to /status?url=...
+  const onFinish = (values: any) => {
+    router.push(`/status?url=${encodeURIComponent(values.productUrl)}`);
+  };
+
   return (
-    <>
-      {/* Hero Section */}
-      <Row
-        align="middle"
-        justify="center"
-        style={{
-          minHeight: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-          background: '#f5f5f5',
-          textAlign: 'center',
-          margin: 0,
-          padding: '60px 20px',
-        }}
-      >
-        <Col xs={24} md={16} lg={12}>
-          <Title level={1} style={{ marginBottom: 10 }}>
-            Meet the Most Powerful AI SEO Agent
-          </Title>
-          <Paragraph style={{ fontSize: 16, lineHeight: 1.7 }}>
-            Harness the power of artificial intelligence to turbocharge your
-            website’s visibility on search engines. Our AI SEO Agent analyzes
-            your content, researches optimal keywords, and provides
-            data-driven strategies to outrank your competition.
-          </Paragraph>
-          <Paragraph style={{ fontSize: 16, lineHeight: 1.7 }}>
-            Whether you’re new to SEO or an experienced marketer, our agent
-            guides you step-by-step to achieve sustainable growth and higher
-            conversions. Start optimizing your content now, and watch your
-            traffic skyrocket!
-          </Paragraph>
+    <Layout style={{ minHeight: '100vh' }}>
+      {/* 3. NavBar at top */}
+      <NavBar />
 
-          <Space size="large" style={{ marginTop: 20 }}>
-            <Link href="/keyword-researcher">
-              <Button type="primary" size="large">
-                Go to Keyword Researcher
-              </Button>
-            </Link>
-            <Button size="large" href="https://example.com" target="_blank" rel="noopener noreferrer">
-              Learn More
-            </Button>
+      <Content style={{ padding: '40px', display: 'flex', justifyContent: 'center' }}>
+        <Card
+          style={{
+            maxWidth: 800,
+            width: '100%',
+            borderRadius: 8,
+            textAlign: 'center',
+            overflow: 'hidden',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            {/* --- HERO SECTION --- */}
+            <div style={{ marginTop: 40 }}>
+              <Title level={2} style={{ marginBottom: 16 }}>
+                Meet Our{' '}
+                <span style={{ color: '#1890ff' }}>
+                  {/* Animated text (type & erase) */}
+
+                </span>{' '}
+                SEO AI Agent
+              </Title>
+
+              <Paragraph style={{ fontSize: '1.1rem', color: '#555' }}>
+                Harness the power of artificial intelligence to analyze your website
+                and generate up to <strong>10x more traffic</strong>.
+                <br />
+                Enter your URL and let BrodAI do the rest!
+              </Paragraph>
+            </div>
+
+            {/* --- ANIMATED ARROW --- */}
+            <div
+              style={{
+                fontSize: 32,
+                animation: 'bounceArrow 1.5s infinite',
+                marginTop: 16,
+                color: '#1890ff',
+              }}
+            >
+              <ArrowDownOutlined />
+            </div>
+            {/* Keyframes for arrow bounce */}
+            <style jsx>{`
+              @keyframes bounceArrow {
+                0% {
+                  transform: translateY(0);
+                }
+                50% {
+                  transform: translateY(8px);
+                }
+                100% {
+                  transform: translateY(0);
+                }
+              }
+            `}</style>
+
+            {/* --- FORM TO INPUT URL --- */}
+            <div style={{ marginTop: 16 }}>
+              <Form layout="vertical" onFinish={onFinish}>
+                <Form.Item
+                  name="productUrl"
+                  rules={[{ required: true, message: 'Please enter your site URL!' }]}
+                >
+                  <Input
+                    placeholder="https://www.yourwebsite.com"
+                    size="large"
+                    value={urlValue}
+                    onChange={(e) => setUrlValue(e.target.value)}
+                  />
+                </Form.Item>
+                <Form.Item>
+                  <Button type="primary" htmlType="submit" size="large" block>
+                    Analyze My Website
+                  </Button>
+                </Form.Item>
+              </Form>
+            </div>
           </Space>
-        </Col>
-      </Row>
-
-      <Divider style={{ margin: 0 }} />
-
-      {/* Features Section */}
-      <Row
-        justify="center"
-        style={{
-          padding: '50px 20px',
-          background: '#fff',
-        }}
-      >
-        <Col xs={24} md={16} lg={12}>
-          <Features />
-        </Col>
-      </Row>
-    </>
+        </Card>
+      </Content>
+    </Layout>
   );
 }

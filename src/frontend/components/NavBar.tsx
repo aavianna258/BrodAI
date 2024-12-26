@@ -1,36 +1,44 @@
-// NavBar.tsx (new code) using the `items` prop
+// components/NavBar.tsx
 'use client';
 
 import React from 'react';
-import { Layout, Menu } from 'antd';
-import { HomeOutlined, SearchOutlined } from '@ant-design/icons';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { Layout, Menu } from 'antd';
 
 const { Header } = Layout;
 
 export default function NavBar() {
+  // Optional: You can highlight the currently active menu item with `usePathname()`
+  const pathname = usePathname();
+
+  // Create your menu items array
   const menuItems = [
     {
       key: 'home',
-      icon: <HomeOutlined />,
       label: <Link href="/">Home</Link>,
     },
     {
-      key: 'keyword',
-      icon: <SearchOutlined />,
-      label: <Link href="/keyword-researcher">Keyword Researcher</Link>,
+      key: 'status',
+      label: <Link href="/status?url=your-website.com">Status</Link>,
+    },
+    {
+      key: 'articles',
+      label: <Link href="/articles">Articles</Link>,
     },
   ];
 
+  // Determine which key should be highlighted
+  let selectedKey: string = 'home';
+  if (pathname?.startsWith('/status')) selectedKey = 'status';
+  if (pathname?.startsWith('/articles')) selectedKey = 'articles';
+
   return (
-    <Header>
-      <div style={{ float: 'left', color: '#fff', fontWeight: 'bold', marginRight: '20px' }}>
-        BrodAI - AI SEO Agent
-      </div>
+    <Header style={{ backgroundColor: '#fff', boxShadow: '0 2px 8px #f0f1f2' }}>
       <Menu
-        theme="dark"
         mode="horizontal"
-        defaultSelectedKeys={['home']}
+        selectedKeys={[selectedKey]}
+        style={{ borderBottom: 'none' }}
         items={menuItems}
       />
     </Header>
