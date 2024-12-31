@@ -30,10 +30,22 @@ class KeywordResearcher:
         return response_json
 
     def _compute_performance_score(self, volume: int, difficulty: float) -> float:
-        """scoring function for keyword based on volume and difficulty
-        just for test, we will improve it after
         """
-        return round(volume / (0.1 + difficulty**2), 2)
+        Scoring function pour un mot-clé, basée sur son volume de recherche et sa difficulté.
+        - Score nul si le volume < 800.
+        - Biais plus fort en faveur des faibles difficultés.
+        """
+        # Si le volume est inférieur à 800, score = 0
+        if volume < 800:
+            return 0.0
+
+        # Exemple : on augmente la pénalisation de la difficulté en utilisant
+        # une puissance plus grande (ici ^3) pour "renforcer" l’impact de la difficulté élevée.
+        # Vous pouvez ajuster la formule (par ex. ^2, ^4, etc.) selon le degré de biais désiré.
+        score = (volume**(0.3) / (0.0001 + (difficulty / 100) ** 3) / 10**3)
+
+        return round(score, 2)
+
 
     def get_top_keywords(self) -> List[BrodAIKeyword]:
         semrush_client = SemRushClient()

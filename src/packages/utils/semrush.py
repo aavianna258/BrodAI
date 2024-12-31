@@ -123,9 +123,6 @@ class SemRushClient:
         params.update(kwargs)  # Add any additional parameters provided by the user
         response = self._make_request(endpoint, params)
 
-        if not isinstance(response, pd.DataFrame):
-            raise ValueError(f"API response not in CSV format. Error: {response.text}")
-
         return self._process_api_response(response)
 
     def get_kwd_overview_for_region(
@@ -163,8 +160,8 @@ class SemRushClient:
         report_df = self.get_keyword_report(
             report_type="phrase_this",
             phrase=keyword,
-            region="us",
-            export_columns="Ph,Nq,Co",
+            region="fr",
+            export_columns="Ph,Nq,Kd",
         )
 
         if report_df.empty:
@@ -178,8 +175,7 @@ class SemRushClient:
         keyword_data = BrodAIKeyword(
             keyword=str(row["Keyword"]),
             traffic=int(row["Search Volume"]),
-            difficulty=float(row["Competition"]),
+            difficulty=float(row["Keyword Difficulty Index"]),
             performance_score=-1.0,  # negative number to indicate that it hasn't been computed yet
         )
-
         return keyword_data
