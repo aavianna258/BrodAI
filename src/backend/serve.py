@@ -136,16 +136,13 @@ def mock_keyword_research() -> Dict[str, List[BrodAIKeyword]]:
 @app.post("/analysis", response_model=AnalysisResponse)
 def analyze_domain(payload: AnalysisRequest):
     """
-    This route calls our SeoAnalyzer to run 
-    a domain analysis using SEMRush, 
+    Calls our SeoAnalyzer to run a domain analysis using SEMRush, 
     then returns the results.
     """
     domain = payload.domain
 
-    # 1) Initialize the SeoAnalyzer
     analyzer = SeoAnalyzer(api_key=os.getenv("SEMRUSH_API_KEY"))
 
-    # 2) Analyze
     try:
         analysis_data = analyzer.analyze_domain(domain)
         return AnalysisResponse(status=200, data=analysis_data)
@@ -154,4 +151,3 @@ def analyze_domain(payload: AnalysisRequest):
             status=500,
             data={"error": f"Failed to analyze domain: {str(e)}"}
         )
-    

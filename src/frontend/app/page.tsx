@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import HeroSection from '@/components/home/HeroSection';
+import HeroSection from '@/components/home/HeroSection2';
 import BrandIcons from '@/components/home/BrandIcons';
 import FeaturesSection from '@/components/home/FeaturesSection';
 import PricingSection from '@/components/home/PricingSection';
