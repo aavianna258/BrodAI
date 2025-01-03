@@ -126,7 +126,7 @@ class SemRushClient:
         return self._process_api_response(response)
 
     def get_kwd_overview_for_region(
-        self, phrase: str, region: Optional[str] = "fr"
+        self, phrase: str, region: Optional[str] = "us"
     ) -> pd.DataFrame:
         """
         Sends API request and gets a SemRush a report for a given keyword by specifying the report type.
@@ -160,7 +160,7 @@ class SemRushClient:
         report_df = self.get_keyword_report(
             report_type="phrase_this",
             phrase=keyword,
-            region="fr",
+            region="us",
             export_columns="Ph,Nq,Kd",
         )
 
