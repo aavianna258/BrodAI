@@ -1,30 +1,26 @@
+// app/layout.tsx
+"use clients";
+
+
+import 'antd/dist/reset.css';
+
 
 import './globals.css';
-import 'antd/dist/reset.css';
-import type { Metadata } from 'next';
-import NavBar from '../components/NavBar';
-import React from 'react';
 
-export const metadata: Metadata = {
-  title: 'My SEO Tool',
-  description: 'Example Next.js 13 + Ant Design App',
-};
+import { ReactNode } from 'react';
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+import NavBar from '@/components/globals/NavBar'; // The NavBar from above
+import AppFooter from '@/components/globals/AppFooter';
+
+
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body style={{ margin: 0, padding: 0 }}>
-        {/* Our NavBar always at the top */}
         <NavBar />
-
-        {/* Main content area with zero padding/margin to allow full-width sections */}
-        <div style={{ margin: 0, padding: 0 }}>
-          {children}
-        </div>
+        {children}
+        {/* You can add a global footer here if you wish */}
+        <AppFooter />
       </body>
     </html>
   );
