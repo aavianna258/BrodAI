@@ -1,6 +1,6 @@
 from typing import Any, List
 from src.packages.config.prompts import Prompts
-from src.packages.utils.other_utils import extract_keywords_json
+from src.packages.utils.misc import extract_keywords_json
 from src.packages.utils.openai import OpenAIClient
 from src.packages.utils.semrush import BrodAIKeyword, SemRushClient
 import logging
