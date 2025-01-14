@@ -34,10 +34,18 @@ class ShopifyBlogger:
             res_dict = json.loads(response)
 
             # print response for debugging
-            print(json.dumps(res_dict, indent=4))
+            # print("------------\nAPI RESPONSE\n------------\n", json.dumps(res_dict, indent=4))
 
-            # TODO: implement error handling, not the case here because getting only the data part
-            return dict(res_dict["data"])
+            try:
+                return dict(res_dict["data"])
+            except KeyError:
+                raise ExceptionGroup(
+                    "Error with Shopify API request.",
+                    [
+                        Exception(json.dumps(error, indent=4))
+                        for error in res_dict["errors"]
+                    ],
+                )
 
     def get_shop_name(self) -> Dict[str, Any]:
         return self._execute_command(operation_name="GetShopName")
@@ -81,7 +89,7 @@ class ShopifyBlogger:
     def update_article(self, article_id: str, article: BlogArticle) -> Dict[str, Any]:
         variables = {
             "id": article_id,
-            "input": {
+            "article": {
                 "title": article["title"],
                 "author": {"name": article["author"]},
                 "handle": article.get("handle"),
@@ -96,10 +104,8 @@ class ShopifyBlogger:
         )
 
     def publish_article(self, article_id: str) -> Dict[str, Any]:
-        variables = {"id": article_id, "isPublished": True}
-        return self._execute_command(
-            operation_name="UpdateArticle", variables=variables
-        )
+        vars = {"id": article_id}
+        return self._execute_command(operation_name="PublishArticle", variables=vars)
 
     def list_blogs_and_articles(self, n_articles: Optional[int] = 10) -> Dict[str, Any]:
         variables = {"nArticles": n_articles}
@@ -110,14 +116,14 @@ class ShopifyBlogger:
         for blog in response["blogs"]["nodes"]:
             articles[blog["id"]] = []
             for article in blog["articles"]["nodes"]:
-                articles[blog["id"]] = article
+                articles[blog["id"]].append(article)
         return articles
 
 
 def test_list_blogs_and_articles() -> None:
     blogger = ShopifyBlogger()
     articles = blogger.list_blogs_and_articles()
-    print(json.dumps(articles, indent=4))
+    print("------------\nTEST RESPONSE\n------------\n", json.dumps(articles, indent=4))
 
 
 def test_create_article() -> None:
@@ -126,16 +132,18 @@ def test_create_article() -> None:
     article = BlogArticle(
         {
             "blogId": "gid://shopify/Blog/389767568",
-            "title": "New Article Title",
-            "author": "Test User",
-            "handle": "new-article-title",
+            "title": "Another Article Title",
+            "author": "Another Test User",
+            "handle": "another-article-title",
             "body": "This is the content of the article.",
             "summary": "This is a summary of the article.",
-            "is_published": True,
+            "is_published": False,
             "tags": ["Tag1", "Tag2"],
         }
     )
     blogger.create_article(blog_id, article)
+    articles = blogger.list_blogs_and_articles()
+    print("------------\nTEST RESPONSE\n------------\n", json.dumps(articles, indent=4))
 
 
 def test_list_blogs() -> None:
@@ -153,14 +161,14 @@ def test_list_articles() -> None:
 
 def test_get_article() -> None:
     blogger = ShopifyBlogger()
-    article_id = "gid://shopify/Article/1234567890"
+    article_id = "gid://shopify/Article/560879337644"
     article = blogger.get_article(article_id)
     print(article)
 
 
 def test_update_article() -> None:
     blogger = ShopifyBlogger()
-    article_id = "gid://shopify/Article/1234567890"
+    article_id = "gid://shopify/Article/560879337644"
     article = BlogArticle(
         {
             "title": "Updated Article Title",
@@ -178,19 +186,11 @@ def test_update_article() -> None:
 
 def test_publish_article() -> None:
     blogger = ShopifyBlogger()
-    article_id = "gid://shopify/Article/1234567890"
+    article_id = "gid://shopify/Article/560879337644"
     published_article = blogger.publish_article(article_id)
     print(published_article)
 
 
-blogger = ShopifyBlogger()
-print(blogger.get_shop_name())
-
-# if __name__ == "__main__":
-#     test_list_blogs_and_articles()
-#     test_create_article()
-#     test_list_blogs()
-#     test_list_articles()
-#     test_get_article()
-#     test_update_article()
-#     test_publish_article()
+def test_get_shop_name() -> None:
+    blogger = ShopifyBlogger()
+    print(blogger.get_shop_name())

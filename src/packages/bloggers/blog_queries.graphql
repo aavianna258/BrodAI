@@ -1,5 +1,5 @@
 # Fragment for article information
-fragment ArticleInfo on Article {
+fragment ArticleData on Article {
   id
   title
   body
@@ -38,7 +38,7 @@ query ListArticles($blogId: ID!) {
   blog(id: $blogId) {
     articles(first: 10) {
       nodes {
-        ...ArticleInfo
+        ...ArticleData
       }
     }
   }
@@ -47,7 +47,7 @@ query ListArticles($blogId: ID!) {
 # Query to get a specific article
 query GetArticle($articleId: ID!) {
   article(id: $articleId) {
-    ...ArticleInfo
+    ...ArticleData
   }
 }
 
@@ -55,7 +55,7 @@ query GetArticle($articleId: ID!) {
 mutation CreateArticle($article: ArticleCreateInput!) {
   articleCreate(article: $article) {
     article {
-      ...ArticleInfo
+      ...ArticleData
     }
     userErrors {
       code
@@ -69,7 +69,21 @@ mutation CreateArticle($article: ArticleCreateInput!) {
 mutation UpdateArticle($id: ID!, $article: ArticleUpdateInput!) {
   articleUpdate(id: $id, article: $article) {
     article {
-      ...ArticleInfo
+      ...ArticleData
+    }
+    userErrors {
+      code
+      field
+      message
+    }
+  }
+}
+
+# Mutation to publsih an article
+mutation PublishArticle($id: ID!) {
+  articleUpdate(id: $id, article: {isPublished: true}) {
+    article {
+      ...ArticleData
     }
     userErrors {
       code
@@ -87,7 +101,7 @@ query ListBlogsAndArticles {
       title
       articles(first: 10) {
         nodes {
-          ...ArticleInfo
+          ...ArticleData
         }
       }
     }
