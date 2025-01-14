@@ -1,6 +1,10 @@
 import json
 import re
-from typing import Dict, List
+from typing import Any, Dict, List
+
+
+def pretty_print_json(data: Any) -> None:
+    print(json.dumps(data, indent=4))
 
 
 def extract_json(text: str) -> Dict:

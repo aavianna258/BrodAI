@@ -1,0 +1,109 @@
+# Fragment for article information
+fragment ArticleData on Article {
+  id
+  title
+  body
+  summary
+  isPublished
+  author {
+    name
+  }
+  handle
+  tags
+  image {
+    altText
+    originalSrc
+  }
+}
+
+# Query to get the shop name
+query GetShopName {
+  shop {
+    name
+  }
+}
+
+# Query to list blogs
+query ListBlogs {
+  blogs(first: 10) {
+    nodes {
+      id
+      title
+    }
+  }
+}
+
+# Query to list articles in a blog
+query ListArticles($blogId: ID!) {
+  blog(id: $blogId) {
+    articles(first: 10) {
+      nodes {
+        ...ArticleData
+      }
+    }
+  }
+}
+
+# Query to get a specific article
+query GetArticle($articleId: ID!) {
+  article(id: $articleId) {
+    ...ArticleData
+  }
+}
+
+# Mutation to create an article
+mutation CreateArticle($article: ArticleCreateInput!) {
+  articleCreate(article: $article) {
+    article {
+      ...ArticleData
+    }
+    userErrors {
+      code
+      field
+      message
+    }
+  }
+}
+
+# Mutation to update an article
+mutation UpdateArticle($id: ID!, $article: ArticleUpdateInput!) {
+  articleUpdate(id: $id, article: $article) {
+    article {
+      ...ArticleData
+    }
+    userErrors {
+      code
+      field
+      message
+    }
+  }
+}
+
+# Mutation to publsih an article
+mutation PublishArticle($id: ID!) {
+  articleUpdate(id: $id, article: {isPublished: true}) {
+    article {
+      ...ArticleData
+    }
+    userErrors {
+      code
+      field
+      message
+    }
+  }
+}
+
+# Query to list blogs and their articles
+query ListBlogsAndArticles {
+  blogs(first: 10) {
+    nodes {
+      id
+      title
+      articles(first: 10) {
+        nodes {
+          ...ArticleData
+        }
+      }
+    }
+  }
+}
