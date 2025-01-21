@@ -8,12 +8,17 @@ from blog_article import BlogArticle
 
 
 class ShopifyBlogger:
-    def __init__(self) -> None:
+    def __init__(self, client_name: Optional[str] = None) -> None:
         load_dotenv(".env")
-        self.api_token = os.getenv("SHOPIFY_ACCESS_TOKEN")
-        shopname = os.getenv("SHOPIFY_STORE_NAME")
+        if client_name is not None:
+            print(f"Using Shopify client: {client_name}")
+            self.api_token = os.getenv(client_name + "_SHOPIFY_ACCESS_TOKEN")
+            self.shop_url = os.getenv(client_name + "_SHOPIFY_STORE_URL")
+        else:
+            self.api_token = os.getenv("SHOPIFY_ACCESS_TOKEN")
+            self.shop_url = os.getenv("SHOPIFY_STORE_URL")
         self.api_version = os.getenv("SHOPIFY_API_VERSION")
-        self.shop_url = "%s.myshopify.com" % shopname
+        print(self.shop_url)
         self.query_doc = Path(
             "./src/packages/bloggers/blog_queries.graphql"
         ).read_text()
@@ -194,3 +199,8 @@ def test_publish_article() -> None:
 def test_get_shop_name() -> None:
     blogger = ShopifyBlogger()
     print(blogger.get_shop_name())
+
+
+blogger = ShopifyBlogger("RTSCABINETS")
+# blogger = ShopifyBlogger()
+print(blogger.get_shop_name())
