@@ -6,6 +6,9 @@ import { Row, Col, Input, Button, Spin, message, Table } from 'antd';
 import { motion } from 'framer-motion';
 import { LoadingOutlined } from '@ant-design/icons';
 import { fetchKeywords, IBrodAIKeyword } from '@/components/keyword-research/KeywordResearchService';
+import { useRouter } from 'next/navigation';
+
+
 
 export default function KeywordResearchPage() {
   const [mainKeyword, setMainKeyword] = useState('');
@@ -31,12 +34,34 @@ export default function KeywordResearchPage() {
     }
   };
 
+  const router = useRouter();
+
+  function handleWriteArticle(keyword: string) {
+    // On peut pousser vers /create-article en passant la query `keyword`
+    router.push(`/create-article?keyword=${encodeURIComponent(keyword)}`);
+  }
+
   // Table columns
   const columns = [
     { title: 'Keyword', dataIndex: 'keyword', key: 'keyword' },
     { title: 'Traffic', dataIndex: 'traffic', key: 'traffic' },
     { title: 'Difficulty', dataIndex: 'difficulty', key: 'difficulty' },
     { title: 'Perf. Score', dataIndex: 'performance_score', key: 'performance_score' },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (text: any, record: IBrodAIKeyword) => (
+        // Exemple avec Link :
+        // <Link href={`/create-article?keyword=${encodeURIComponent(record.keyword)}`}>
+        //   <Button type="primary">Write an article</Button>
+        // </Link>
+  
+        // OU exemple avec un handleWriteArticle :
+        <Button type="primary" onClick={() => handleWriteArticle(record.keyword)}>
+          Write an article
+        </Button>
+      )
+    },
   ];
 
   return (
