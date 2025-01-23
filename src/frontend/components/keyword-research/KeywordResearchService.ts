@@ -7,7 +7,7 @@ export interface IBrodAIKeyword {
   }
   
   export async function fetchKeywords(mainKeyword: string): Promise<IBrodAIKeyword[]> {
-    const response = await fetch('http://localhost:8000/keyword_research', {
+    const response = await fetch('https://test-deploy-cpho.onrender.com/keyword_research', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ main_keyword: mainKeyword }),

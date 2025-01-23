@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { Input, Button, message } from 'antd';
-import fetchKeywords, {IBrodAIKeyword} from './KeywordResearchService';
+import {fetchKeywords, IBrodAIKeyword} from './KeywordResearchService';
 
 type KeywordResearchFormProps = {
   onSearchComplete: (keywords: IBrodAIKeyword[]) => void;

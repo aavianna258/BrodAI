@@ -1,5 +1,5 @@
 export default async function fetchDomainAnalysis(domain: string) {
-    const response = await fetch('http://localhost:8000/analysis', {
+    const response = await fetch('https://test-deploy-cpho.onrender.com/analysis', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ domain }),

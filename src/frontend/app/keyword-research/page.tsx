@@ -44,7 +44,7 @@ export default function KeywordResearchPage() {
       style={{
         padding: '60px 20px',
         textAlign: 'center',
-        minHeight: '100vh',
+        minHeight: '70vh', // Reduced to avoid a very tall layout initially
         background: 'linear-gradient(90deg, #e0ecff 0%, #f0f4ff 100%)',
       }}
     >
@@ -114,6 +114,34 @@ export default function KeywordResearchPage() {
               />
             </motion.div>
           )}
+
+          {/* Additional section: highlights the power of the Keyword Research Agent & free trial */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            style={{
+              marginTop: 40,
+              padding: '24px',
+              backgroundColor: '#fff',
+              borderRadius: 8,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            }}
+          >
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 'bold', marginBottom: 16 }}>
+              Experience Our Powerful Keyword Research Agent
+            </h2>
+            <p style={{ fontSize: '1rem', lineHeight: 1.6, marginBottom: 24 }}>
+              Our agent analyzes your ideas, phrases, or keywords to instantly find the best
+              keywords that will help you rank on Google's first page. Get keywords with high
+              search volume, strong conversion intent, and very low difficulty.
+              <br />
+              BrodAI is offering a free trial of this tool, with 50 free uses to discover its power.
+            </p>
+            <Button type="primary" size="large">
+              Get Your Free Trial (50 Uses)
+            </Button>
+          </motion.div>
         </Col>
       </Row>
     </div>

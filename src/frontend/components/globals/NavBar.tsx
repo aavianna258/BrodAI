@@ -25,7 +25,7 @@ export default function Navbar() {
             <Link href="/#pricing" className="hover:opacity-80 transition-opacity">
               Pricing
             </Link>
-            <Link href="/keyword-researcher" className="hover:opacity-80 transition-opacity">
+            <Link href="/keyword-research" className="hover:opacity-80 transition-opacity">
               Keyword Researcher
             </Link>
             {/* Example: Hard gradient button */}
@@ -56,13 +56,16 @@ export default function Navbar() {
           <div className="md:hidden bg-gradient-to-r from-[#ede9fe] to-[#f3e8ff] px-4 py-3">
             <nav className="flex flex-col space-y-3">
               <Link
-                href="/pricing"
+                href="#pricing"
                 className="hover:opacity-80 transition-opacity text-gray-800"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Pricing
               </Link>
-              <Link href="#book-demo" onClick={() => setIsMenuOpen(false)}>
+              <Link href="/keyword-research" className="hover:opacity-80 transition-opacity text-gray-800">
+              Keyword Researcher
+              </Link>
+              <Link href="https://calendly.com/yassirhanafi17/30min" onClick={() => setIsMenuOpen(false)}>
                 <span className="hard-gradient-button px-4 py-2 rounded-lg font-semibold inline-block text-center text-white">
                   Book a Demo
                 </span>
