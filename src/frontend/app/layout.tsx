@@ -1,26 +1,29 @@
 // app/layout.tsx
-"use clients";
-
-
-import 'antd/dist/reset.css';
-
-
 import './globals.css';
+import { Inter } from 'next/font/google';
+import Navbar from '../components/globals/NavBar';
+import Footer from '../components/globals/AppFooter';
+import '@ant-design/v5-patch-for-react-19';
 
-import { ReactNode } from 'react';
+const inter = Inter({ subsets: ['latin'] });
 
-import NavBar from '@/components/globals/NavBar'; // The NavBar from above
-import AppFooter from '@/components/globals/AppFooter';
+export const metadata = {
+  title: 'BrodAI - Bulk SEO for E-commerce',
+  description: 'BrodAI helps e-commerce stores optimize product listings in bulk using AI.',
+};
 
-
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, padding: 0 }}>
-        <NavBar />
-        {children}
-        {/* You can add a global footer here if you wish */}
-        <AppFooter />
+      <body className={inter.className}>
+        {/* Nav is transparent; Hero will define the gradient. */}
+        <Navbar />
+        <main>{children}</main>
+        <Footer />
       </body>
     </html>
   );

@@ -1,5 +1,5 @@
 {
-    "generate_related_keywords": " Pour le mot clé précédent. Tu es un SEO expert consultant. Génère moi un JSON avec des variantes de ce mot-clé que jevais utiliser pour faire du  keyword research. Le json doit avoir 10 keywords avec 2 words et 10 keywords avec 3 words. et 10 keywords avec 4 words. Le JSON doit etre sous le format suivant : {'2 words':{'example one','example two',},'3 words' :{},'4 words':{}}",
+    "generate_related_keywords": " Pour le mot clé précédent. Tu es un SEO expert consultant. Génère moi un JSON avec des variantes de ce mot-clé que jevais utiliser pour faire du  keyword research. Le json doit avoir 50 keywords avec 2 words et 40 keywords avec 3 words. et 20 keywords avec 4 words. Le JSON doit etre sous le format suivant : {'2 words':{'example one','example two',},'3 words' :{},'4 words':{}}",
 
     "generate_article": "En tant que SEO Expert, pour le mot clé génère un article avec le format JSON avec 'title' et 'content'.\nJe veux une réponse avec le JSON  seulement sans texte supplémentaire ou autres caractères spéciaux.\nCet article doit inclure un maillage externe en renvoyant vers ces liens d'une manière naturelle en essayant de les insérer directement dans le contenu de l'article: {links_html}.\nL'article doit suivre toutes les consignes suivantes :\n",
     

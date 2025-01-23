@@ -1,4 +1,4 @@
-# src/packages/seo_analyzer.py
+# src/packages/seo_analyzer/seo_analyzer.py
 
 import os
 from typing import Dict, Any, List
@@ -22,58 +22,59 @@ class SeoAnalyzer:
     def analyze_domain(self, domain: str) -> Dict[str, Any]:
         """
         Analyzes the given domain using SemRush and returns a dictionary
-        containing your SEO analysis data.
+        containing SEO analysis data.
 
         :param domain: The domain to analyze (e.g. 'example.com')
-        :return: A dict with fields matching the shape your front-end expects
+        :return: A dict with fields for monthlyTraffic, topKeywords, etc.
         """
-
         # 1) Use SemRush to get a domain_organic (top organic keywords) report
-        domain_df: pd.DataFrame
+        #    display_limit=20 or whatever number of keywords you want
         try:
             domain_df = self.client.get_domain_report(
                 report_type="domain_organic",
                 domain=domain,
                 region="us",
-                display_limit=10,
+                display_limit=20,
             )
         except Exception as e:
             raise Exception(f"Failed to fetch data from SemRush: {str(e)}")
 
-        # 2) If no data, return something minimal
+        # If no data or empty, return something minimal
         if domain_df.empty:
             return {
+                "monthlyTraffic": 0,
                 "scoreNumeric": 0,
                 "scoreLetter": "F",
                 "performanceRating": "No Data",
+                "topKeywords": [],
                 "nextSteps": [],
-                "curatedKeywords": [],
-                "blogPosts": [],
-                "detailedKeywords": [],
-                "improvementKeywords": [],
             }
 
-        # 3) Ensure columns exist
-        if "Search Volume" not in domain_df.columns:
-            domain_df["Search Volume"] = 0
+        # SEMrush might return columns like: 'Keyword', 'Search Volume', 'Position'
+        # We want consistent naming:
+        if "Search Volume" in domain_df.columns:
+            domain_df.rename(columns={"Search Volume": "Volume"}, inplace=True)
         if "Keyword" not in domain_df.columns:
             domain_df["Keyword"] = "N/A"
         if "Position" not in domain_df.columns:
             domain_df["Position"] = 999
+        if "Volume" not in domain_df.columns:
+            domain_df["Volume"] = 0
 
-        # 4) Basic monthly traffic estimate
+        # 2) Basic monthly traffic estimate
         monthly_traffic = int(domain_df["Volume"].sum())
 
-        # 5) Pick top 3 keywords by position
-        sorted_df = domain_df.sort_values("Position", ascending=True).head(3)
+        # 3) Gather top 5 keywords by position
+        sorted_df = domain_df.sort_values("Position", ascending=True).head(5)
         top_keywords = []
         for _, row in sorted_df.iterrows():
             top_keywords.append({
-                "title": str(row["Keyword"]),
-                "snippet": f"Position {row['Position']} with ~{row['Volume']} volume",
+                "keyword": str(row["Keyword"]),
+                "position": int(row["Position"]),
+                "volume": int(row["Volume"]),
             })
 
-        # 6) Scoring logic
+        # 4) Some (very) rough scoring logic
         if monthly_traffic < 500:
             score_numeric = 30
             performance_rating = "Needs Improvement"
@@ -82,46 +83,29 @@ class SeoAnalyzer:
             score_numeric = 50
             performance_rating = "Moderate"
             score_letter = "C"
-        else:
+        elif monthly_traffic < 3000:
             score_numeric = 70
             performance_rating = "Good"
             score_letter = "B"
+        else:
+            score_numeric = 90
+            performance_rating = "Excellent"
+            score_letter = "A"
 
-        # 7) Build final data structure
+        # 5) Next Steps
+        next_steps = [
+            "Add more content targeting mid-volume keywords",
+            "Improve on-page SEO for existing pages",
+            "Optimize meta tags and headings"
+        ]
+
         analysis_data = {
+            "monthlyTraffic": monthly_traffic,
             "scoreNumeric": score_numeric,
             "scoreLetter": score_letter,
             "performanceRating": performance_rating,
-            "nextSteps": [
-                "Add more content targeting mid-volume keywords",
-                "Improve on-page SEO for existing pages"
-            ],
-            "curatedKeywords": ["handmade rug", "bohemian decor"],  # placeholders
-            "blogPosts": top_keywords,
-            "detailedKeywords": [
-                {
-                    "keyword": "Fashion Bold",
-                    "currentPosition": 40,
-                    "potentialTraffic": 300,
-                    "competitionLevel": "Medium",
-                },
-                {
-                    "keyword": "handmade carpets",
-                    "currentPosition": 25,
-                    "potentialTraffic": 450,
-                    "competitionLevel": "High",
-                }
-            ],
-            "improvementKeywords": [
-                {
-                    "keyword": "luxury bohemian rug",
-                    "reason": "Trending with moderate difficulty"
-                },
-                {
-                    "keyword": "best boho decor",
-                    "reason": "High monthly searches, easy to rank"
-                }
-            ],
+            "topKeywords": top_keywords,
+            "nextSteps": next_steps,
         }
 
         return analysis_data

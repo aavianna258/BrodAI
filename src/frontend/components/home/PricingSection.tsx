@@ -1,215 +1,145 @@
 'use client';
 
-import React, { useState } from 'react';
-import {
-  Typography,
-  Card,
-  Space,
-  Badge,
-  Divider,
-  Button,
-  Switch,
-  Row,
-  Col,
-} from 'antd';
+import React from 'react';
+import { Row, Col, Card, Typography, Button } from 'antd';
+import { motion } from 'framer-motion';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Paragraph } = Typography;
 
 export default function PricingSection() {
-  const accentColor = '#3B82F6';
-  const [isAnnual, setIsAnnual] = useState(false);
-
-  // Example monthly price
-  const monthlyPrice = 39.99;
-  // 25% discount if annual
-  const annualPrice = parseFloat((monthlyPrice * 0.75).toFixed(2));
-
   return (
-    <div id="pricing" style={{ marginTop: 80, textAlign: 'center' }}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Title level={2} style={{ marginBottom: 0 }}>
-          Explore BrodAI Plans
-        </Title>
-
-        {/* Monthly / Annual Switch */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-          <Text>Monthly</Text>
-          <Switch
-            checked={isAnnual}
-            onChange={(checked) => setIsAnnual(checked)}
-            checkedChildren="Annual"
-            unCheckedChildren=""
-            style={{ backgroundColor: isAnnual ? accentColor : undefined }}
-          />
-          {isAnnual && (
-            <Text style={{ color: accentColor, fontWeight: 600 }}>
-              Save 25%
-            </Text>
-          )}
-        </div>
-
-        {/* Early Access Info Card */}
-        <Card
-          style={{
-            maxWidth: 800,
-            margin: '0 auto',
-            borderRadius: 8,
-            backgroundColor: '#f9f9f9',
-            textAlign: 'left',
-          }}
-          styles={{
-            body: {
-              padding: 24,
-            },
-          }}
-        >
-          <Space direction="vertical" size="middle">
-            <Badge
-              color={accentColor}
-              style={{ color: '#fff' }}
-              count="Early Access Pricing"
-            />
-            <Paragraph style={{ color: '#555', margin: 0 }}>
-              As an early user, you get exclusive beta pricing. In return, 
-              we’d love your feedback to shape BrodAI further. You’ll also 
-              secure priority discounts when we launch officially!
+    <div style={{ background: '#f9fafb', padding: '60px 20px' }}>
+      <Row justify="center" style={{ marginBottom: '40px' }}>
+        <Col xs={24} sm={22} md={16} lg={12} style={{ textAlign: 'center' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <Title level={2} style={{ marginBottom: '16px' }}>
+              Simple, Transparent Pricing
+            </Title>
+            <Paragraph style={{ color: '#6b7280', fontSize: '1rem' }}>
+              We’re just launching BrodAI—experience powerful SEO content and 
+              optimization at a fraction of the usual cost. Try us out for free, 
+              then pick a plan that grows with your business.
             </Paragraph>
-          </Space>
-        </Card>
+          </motion.div>
+        </Col>
+      </Row>
 
-        {/* Plans Row */}
-        <Row
-          gutter={[24, 24]}
-          justify="center"
-          style={{ maxWidth: 1200, margin: '0 auto', marginTop: 32 }}
-        >
-          {/* Early Access Plan */}
-          <Col xs={24} sm={12} md={8}>
+      {/* 3 Pricing Cards */}
+      <Row gutter={[24, 24]} justify="center" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* FREE TEST TIER */}
+        <Col xs={24} sm={12} md={8}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
             <Card
+              hoverable
+              style={{ borderRadius: '8px', textAlign: 'center', minHeight: '450px' }}
+            >
+              <Title level={4} style={{ marginBottom: 0 }}>Free Test</Title>
+              <Paragraph type="secondary" style={{ marginBottom: 20 }}>
+                0 € / month
+              </Paragraph>
+
+              <ul style={{ textAlign: 'left', marginBottom: 24, paddingLeft: '1.25rem' }}>
+                <li>Up to 5 blog posts</li>
+                <li>Integration with Shopify or WordPress</li>
+                <li>API-based content generation</li>
+                <li>No credit card required</li>
+              </ul>
+
+              <Button type="primary" size="large" style={{ borderRadius: '6px' }}>
+                Try for Free
+              </Button>
+            </Card>
+          </motion.div>
+        </Col>
+
+        {/* EARLY ACCESS TIER */}
+        <Col xs={24} sm={12} md={8}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <Card
+              hoverable
               style={{
-                borderRadius: 8,
-                textAlign: 'left',
-                height: '100%',
-                position: 'relative', // allows absolute positioning inside
-              }}
-              styles={{
-                body: {
-                  padding: 24,
-                },
+                borderRadius: '8px',
+                textAlign: 'center',
+                minHeight: '450px',
+                background: '#fff',
+                border: '2px solid #6366f1',
               }}
             >
-              <Badge
+              {/* Highlight the "Early Access" plan with a border or badge */}
+              <Title level={4} style={{ marginBottom: 0 }}>Early Access</Title>
+              <Paragraph style={{ marginBottom: 20, color: '#6366f1' }}>
+                29,90 € / month
+              </Paragraph>
+
+              <ul style={{ textAlign: 'left', marginBottom: 24, paddingLeft: '1.25rem' }}>
+                <li>20 blog posts / month</li>
+                <li>Unlimited keyword research</li>
+                <li>Competitor analysis</li>
+                <li>CMS integration (Shopify, WordPress, etc.)</li>
+              </ul>
+
+              <Button
+                type="primary"
+                size="large"
                 style={{
-                  backgroundColor: accentColor,
-                  position: 'relative',
-                  top: 'auto',
-                  right: '16',
-                  zIndex: 1,
+                  backgroundColor: '#6366f1',
+                  borderColor: '#6366f1',
+                  borderRadius: '6px',
                 }}
-                count="Early Access"
-              />
-
-              <Title level={4} style={{ marginTop: 20 }}>
-                Basic Plan
-              </Title>
-              <Title
-                level={2}
-                style={{ margin: 0, color: '#222', fontWeight: 700 }}
               >
-                ${isAnnual ? annualPrice : monthlyPrice}
-                <span style={{ fontSize: '1rem', color: '#888', marginLeft: 4 }}>
-                  /month
-                </span>
-              </Title>
-              <Divider />
-
-              <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
-                <Text>✔ Site Audit & Technical SEO Fixes</Text>
-                <Text>✔ Automatic keyword research</Text>
-                <Text>✔ 5 SEO blog posts per week</Text>
-                <Text>✔ CMS integration (auto posting)</Text>
-              </Space>
-
-              <div style={{ marginTop: 24 }}>
-                <Button
-                  type="primary"
-                  size="large"
-                  block
-                  style={{
-                    backgroundColor: accentColor,
-                    borderColor: accentColor,
-                    borderRadius: 6,
-                  }}
-                >
-                  Get 7 Days Free
-                </Button>
-              </div>
+                Get Early Access
+              </Button>
             </Card>
-          </Col>
+          </motion.div>
+        </Col>
 
-          {/* Full-Service Plan */}
-          <Col xs={24} sm={12} md={8}>
+        {/* CUSTOM OFFER TIER */}
+        <Col xs={24} sm={12} md={8}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            viewport={{ once: true }}
+          >
             <Card
-              style={{
-                borderRadius: 8,
-                textAlign: 'left',
-                height: '100%',
-                position: 'relative',
-              }}
-              styles={{
-                body: {
-                  padding: 24,
-                },
-              }}
+              hoverable
+              style={{ borderRadius: '8px', textAlign: 'center', minHeight: '450px' }}
             >
-              {/* Badge top-right corner INSIDE the card */}
-              <Badge
-                style={{
-                  backgroundColor: accentColor,
-                  position: 'relative',
-                  top: 'auto',
-                  right: 'auto',
-                  zIndex: 1,
-                }}
-                count="Early Access"
-              />
+              <Title level={4} style={{ marginBottom: 0 }}>Custom Offer</Title>
+              <Paragraph type="secondary" style={{ marginBottom: 20 }}>
+                Contact Us
+              </Paragraph>
 
-              <Title level={4} style={{ marginTop: 20 }}>
-                Full-Service Plan
-              </Title>
-              <Title
-                level={2}
-                style={{ margin: 0, color: '#222', fontWeight: 700 }}
-              >
-                Custom Pricing
-              </Title>
-              <Divider />
+              <ul style={{ textAlign: 'left', marginBottom: 24, paddingLeft: '1.25rem' }}>
+                <li>Full site & page analysis</li>
+                <li>Unlimited page optimization suggestions</li>
+                <li>Custom # of blog posts & audits</li>
+                <li>Integration with Google/Bing & dev team collaboration</li>
+                <li>Performance monitoring & advanced reporting</li>
+              </ul>
 
-              <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
-                <Text>✔ Everything in Early Access Plan</Text>
-                <Text>✔ Dedicated SEO Expert</Text>
-                <Text>✔ Monthly Strategy Planning</Text>
-                <Text>✔ 24/7 Support</Text>
-              </Space>
-
-              <div style={{ marginTop: 24 }}>
-                <Button
-                  type="primary"
-                  size="large"
-                  block
-                  style={{
-                    backgroundColor: accentColor,
-                    borderColor: accentColor,
-                    borderRadius: 6,
-                  }}
-                >
-                  Book A Demo
-                </Button>
-              </div>
+              <Button type="default" size="large" style={{ borderRadius: '6px' }}>
+                Contact Sales
+              </Button>
             </Card>
-          </Col>
-        </Row>
-      </Space>
+          </motion.div>
+        </Col>
+      </Row>
     </div>
   );
 }

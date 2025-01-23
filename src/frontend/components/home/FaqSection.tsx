@@ -17,10 +17,11 @@ export default function FaqSection() {
           and auto for left/right (which centers it horizontally).
         */
         margin: '80px auto',
-        maxWidth: 800,
+        maxWidth: 'auto',
+        padding: '0 20px',
         /* If you want the entire FAQ text left-aligned, keep 'left';
            if you want the entire section center-aligned, use 'center'. */
-        textAlign: 'left', 
+        textAlign: 'center', 
       }}
     >
       {/* Center the FAQ title itself: */}
