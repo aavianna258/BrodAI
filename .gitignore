@@ -1,7 +1,8 @@
 ##########################  CUSTOM ##################################
 .vscode/
 .ruff_cache/
-test.py
+scripts/test.py
+scripts/shopify_test.py
 
 ##########################  DEFAULT FROM GITHUB ##################################
 # Byte-compiled / optimized / DLL files

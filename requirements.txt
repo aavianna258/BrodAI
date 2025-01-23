@@ -6,3 +6,4 @@ pre-commit
 requests
 lxml
 openai
+ShopifyAPI
