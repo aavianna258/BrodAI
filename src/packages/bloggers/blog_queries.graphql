@@ -1,6 +1,5 @@
 # Fragment for article information
 fragment ArticleData on Article {
-  id
   title
   body
   summary
@@ -16,10 +15,41 @@ fragment ArticleData on Article {
   }
 }
 
+fragment BlogData on Blog {
+  title
+  handle
+  templateSuffix
+  commentPolicy
+}
+
 # Query to get the shop name
 query GetShopName {
   shop {
     name
+  }
+}
+
+# Query to create blog
+mutation CreateBlog($blog: BlogCreateInput!) {
+  blogCreate(blog: $blog) {
+    blog {
+      id
+      ...BlogData
+    }
+    userErrors {
+      code
+      field
+      message
+    }
+  }
+}
+
+# Query to get blog by ID
+query GetBlog($id: ID!) {
+  blog(id: $id) {
+    id
+    title
+    handle
   }
 }
 
@@ -29,6 +59,9 @@ query ListBlogs {
     nodes {
       id
       title
+      handle
+      templateSuffix
+      commentPolicy
     }
   }
 }
@@ -38,6 +71,7 @@ query ListArticles($blogId: ID!) {
   blog(id: $blogId) {
     articles(first: 10) {
       nodes {
+        id
         ...ArticleData
       }
     }
@@ -47,6 +81,7 @@ query ListArticles($blogId: ID!) {
 # Query to get a specific article
 query GetArticle($articleId: ID!) {
   article(id: $articleId) {
+    id
     ...ArticleData
   }
 }
@@ -69,6 +104,7 @@ mutation CreateArticle($article: ArticleCreateInput!) {
 mutation UpdateArticle($id: ID!, $article: ArticleUpdateInput!) {
   articleUpdate(id: $id, article: $article) {
     article {
+      id
       ...ArticleData
     }
     userErrors {
@@ -83,6 +119,7 @@ mutation UpdateArticle($id: ID!, $article: ArticleUpdateInput!) {
 mutation PublishArticle($id: ID!) {
   articleUpdate(id: $id, article: {isPublished: true}) {
     article {
+      id
       ...ArticleData
     }
     userErrors {

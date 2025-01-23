@@ -1,4 +1,11 @@
-from typing import TypedDict
+from typing import Optional, TypedDict
+
+
+class Blog(TypedDict):
+    title: str
+    handle: Optional[str]
+    templateSuffix: Optional[str]
+    commentPolicy: str
 
 
 class BlogArticle(TypedDict):
