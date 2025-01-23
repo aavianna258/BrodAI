@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 import shopify
 import json
-from blog_article import BlogArticle
+from src.packages.bloggers.shopify_blog_objects import Blog, BlogArticle
 
 
 class ShopifyBlogger:
@@ -14,11 +14,14 @@ class ShopifyBlogger:
             print(f"Using Shopify client: {client_name}")
             self.api_token = os.getenv(client_name + "_SHOPIFY_ACCESS_TOKEN")
             self.shop_url = os.getenv(client_name + "_SHOPIFY_STORE_URL")
+            if self.api_token is None or self.shop_url is None:
+                raise Exception(
+                    f"Client {client_name} not found in .env file. Please check your .env file."
+                )
         else:
             self.api_token = os.getenv("SHOPIFY_ACCESS_TOKEN")
             self.shop_url = os.getenv("SHOPIFY_STORE_URL")
         self.api_version = os.getenv("SHOPIFY_API_VERSION")
-        print(self.shop_url)
         self.query_doc = Path(
             "./src/packages/bloggers/blog_queries.graphql"
         ).read_text()
@@ -55,8 +58,16 @@ class ShopifyBlogger:
     def get_shop_name(self) -> Dict[str, Any]:
         return self._execute_command(operation_name="GetShopName")
 
-    def create_blog(self, title: str, comment: str) -> str:
-        return "Not implemented yet"
+    def create_blog(self, blog: Blog) -> Dict[str, Any]:
+        variables = {
+            "blog": {
+                "title": blog["title"],
+                "handle": blog.get("handle"),
+                "templateSuffix": blog.get("templateSuffix"),
+                "commentPolicy": blog.get("commentPolicy") or "CLOSED",
+            }
+        }
+        return self._execute_command(operation_name="CreateBlog", variables=variables)
 
     def create_article(
         self, blog_id: str, article: BlogArticle, publish: Optional[bool] = False
@@ -88,8 +99,12 @@ class ShopifyBlogger:
         return self._execute_command(operation_name="ListArticles", variables=variables)
 
     def get_article(self, article_id: str) -> Dict[str, Any]:
-        variables = {"articleId": article_id}
+        variables = {"id": article_id}
         return self._execute_command(operation_name="GetArticle", variables=variables)
+
+    def get_blog(self, blog_id: str) -> Dict[str, Any]:
+        variables = {"id": blog_id}
+        return self._execute_command(operation_name="GetBlog", variables=variables)
 
     def update_article(self, article_id: str, article: BlogArticle) -> Dict[str, Any]:
         variables = {
@@ -123,84 +138,3 @@ class ShopifyBlogger:
             for article in blog["articles"]["nodes"]:
                 articles[blog["id"]].append(article)
         return articles
-
-
-def test_list_blogs_and_articles() -> None:
-    blogger = ShopifyBlogger()
-    articles = blogger.list_blogs_and_articles()
-    print("------------\nTEST RESPONSE\n------------\n", json.dumps(articles, indent=4))
-
-
-def test_create_article() -> None:
-    blogger = ShopifyBlogger()
-    blog_id = "gid://shopify/Blog/89840976044"
-    article = BlogArticle(
-        {
-            "blogId": "gid://shopify/Blog/389767568",
-            "title": "Another Article Title",
-            "author": "Another Test User",
-            "handle": "another-article-title",
-            "body": "This is the content of the article.",
-            "summary": "This is a summary of the article.",
-            "is_published": False,
-            "tags": ["Tag1", "Tag2"],
-        }
-    )
-    blogger.create_article(blog_id, article)
-    articles = blogger.list_blogs_and_articles()
-    print("------------\nTEST RESPONSE\n------------\n", json.dumps(articles, indent=4))
-
-
-def test_list_blogs() -> None:
-    blogger = ShopifyBlogger()
-    blogs = blogger.list_blogs()
-    print(blogs)
-
-
-def test_list_articles() -> None:
-    blogger = ShopifyBlogger()
-    blog_id = "gid://shopify/Blog/89840976044"
-    articles = blogger.list_articles(blog_id)
-    print(json.dumps(articles, indent=4))
-
-
-def test_get_article() -> None:
-    blogger = ShopifyBlogger()
-    article_id = "gid://shopify/Article/560879337644"
-    article = blogger.get_article(article_id)
-    print(article)
-
-
-def test_update_article() -> None:
-    blogger = ShopifyBlogger()
-    article_id = "gid://shopify/Article/560879337644"
-    article = BlogArticle(
-        {
-            "title": "Updated Article Title",
-            "author": "Updated Author",
-            "handle": "updated-article-title",
-            "body": "This is the updated content of the article.",
-            "summary": "This is an updated summary of the article.",
-            "is_published": True,
-            "tags": ["UpdatedTag1", "UpdatedTag2"],
-        }
-    )
-    updated_article = blogger.update_article(article_id, article)
-    print(updated_article)
-
-
-def test_publish_article() -> None:
-    blogger = ShopifyBlogger()
-    article_id = "gid://shopify/Article/560879337644"
-    published_article = blogger.publish_article(article_id)
-    print(published_article)
-
-
-def test_get_shop_name() -> None:
-    blogger = ShopifyBlogger()
-    print(blogger.get_shop_name())
-
-
-blogger = ShopifyBlogger("RTSCABINETS")
-# blogger = ShopifyBlogger()
-print(blogger.get_shop_name())
