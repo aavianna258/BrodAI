@@ -2,18 +2,35 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
-  // Lire le body JSON
+  // Lire le body JSON envoyé par le front
   const body = await request.json();
-  const { keyword } = body;
+  const { main_keyword } = body;
 
-  if (!keyword) {
+  if (!main_keyword) {
     return NextResponse.json({ error: 'Missing keyword' }, { status: 400 });
   }
 
-  // Simuler un article "fake"
-  const title = `How to succeed with "${keyword}"`;
-  const content = `Lorem ipsum about ${keyword}... (Faux contenu généré)`;
+  // Appeler notre API Python sur http://localhost:8000/generateArticle
+  try {
+    const pythonRes = await fetch('http://localhost:8000/generateArticle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ main_keyword }),
+    });
 
-  // On renvoie un JSON
-  return NextResponse.json({ title, content });
+    // Si l'API Python renvoie une erreur HTTP (ex: 4xx / 5xx)
+    if (!pythonRes.ok) {
+      const error = await pythonRes.json();
+      return NextResponse.json({ error: error.detail || 'Python API Error' }, { status: pythonRes.status });
+    }
+
+    // Sinon, on parse le JSON
+    const data = await pythonRes.json();
+
+    // On renvoie la même structure au front
+    return NextResponse.json(data, { status: 200 });
+
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Fetch error' }, { status: 500 });
+  }
 }
