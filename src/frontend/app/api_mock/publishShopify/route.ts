@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const { token, store, blogId, title, content, tags, published } = await req.json();
 
     // Appel HTTP au serveur Python qui contient le code ShopifyBlogger
-    const pythonRes = await fetch('http://localhost:8000/create-article', {
+    const pythonRes = await fetch('http://localhost:8000/publishShopify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

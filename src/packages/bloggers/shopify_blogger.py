@@ -27,9 +27,7 @@ class ShopifyBlogger:
         ).read_text()
 
     def _open_session(self) -> shopify.Session:
-        print("DEBUG - shop_url =", self.shop_url)
-        print("DEBUG - api_version =", self.api_version)
-        print("DEBUG - api_token =", self.api_token)
+
         return shopify.Session.temp(self.shop_url, self.api_version, self.api_token)
 
     def _execute_command(

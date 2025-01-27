@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from src.packages.seo_analyzer.seo_analyzer import SeoAnalyzer
 from httpx import RequestError
 from pydantic import BaseModel
@@ -60,14 +60,14 @@ class TrafficReport(BaseModel):
 class PublishShopifyRequest(BaseModel):
     token: str
     store: str
-    blogId: str
+    blogId: Optional[str] = None
     title: str
     content: str
     tags: List[str] = []
     published: bool = True
 
 class CreateArticlePayload(BaseModel):
-    blogId: str
+    blogId: Optional[str] = None
     title: str
     author: str
     body: str
@@ -176,8 +176,9 @@ def publish_shopify_article(payload: PublishShopifyRequest):
         #    - blogId = payload.blogId
         #    - article = article_data (dict)
         #    - publish = payload.published (pour la publication)
+        print(payload.blogId)
         response = blogger.create_article(
-            blog_id='gid://shopify/Blog/114693013829', 
+            blog_id = payload.blogId or "gid://shopify/Blog/114693013829",
             article=article_data,
             publish=payload.published
         )
@@ -198,7 +199,7 @@ def publish_shopify_article(payload: PublishShopifyRequest):
             "success": True,
             "article": {
                 "title": created_article["title"],
-                "id": created_article["id"],
+                #"id": created_article["id"],
                 "isPublished": created_article["isPublished"]
             }
         }
