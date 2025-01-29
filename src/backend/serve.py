@@ -183,7 +183,7 @@ def publish_shopify_article(payload: PublishShopifyRequest):
         blogger = ShopifyBlogger()
         blogger.api_token = payload.token     # on écrase la variable d'env
         blogger.shop_url = payload.store      # on écrase également la variable d'env
-        print(blogger.api_token)
+
         # 2) Construire les données de l'article
         article_data = {
             "title": payload.title,
@@ -419,6 +419,7 @@ def refine_content(payload: RefineContentRequest):
         f"{content}\n\n"
         f"Instruction de refinement: {instruction}\n\n"
         f"Retourne le texte HTML modifié en respectant l'instruction. "
+        f"renvoie juste le contenu de l'article en code html dans une balise <div> sans markdown ou texte supplémentaire"
         f"Ne rajoute pas d'explications, seulement le contenu final."
     )
 
@@ -545,3 +546,164 @@ def apply_images(payload: ApplyImagesRequest):
         updated_content = content
 
     return {"updated_content": updated_content}
+
+
+class TechnicalAuditRequest(BaseModel):
+    store: Optional[str] = None
+    token: Optional[str] = None
+    blog_id: Optional[str] = None
+
+    # Si on n'a pas envie de fetch depuis Shopify, on peut passer directement le contenu
+    article_content: Optional[str] = None
+    title: Optional[str] = None
+
+
+class TechnicalAuditResponse(BaseModel):
+    # On renvoie la liste de recommandations
+    # Par exemple, un tableau d'objets { priority, message }
+    recommendations: List[Dict[str, Any]] = []
+    # On peut renvoyer aussi le HTML d'origine (pour l'afficher si besoin)
+    original_content: Optional[str] = None
+
+
+class ApplyTechnicalAuditRequest(BaseModel):
+    original_content: str
+    # Le "rapport" / la liste de changes
+    # Tu peux stocker ce que tu veux dedans (texte, JSON, etc.)
+    # et l'envoyer dans le prompt
+    audit_report: List[Dict[str, Any]]
+
+
+class ApplyTechnicalAuditResponse(BaseModel):
+    updated_content: str
+
+
+@router.post("/technicalAudit", response_model=TechnicalAuditResponse)
+def technical_audit(payload: TechnicalAuditRequest):
+    """
+    1) Récupère le HTML de l'article (depuis Shopify ou depuis le payload).
+    2) Appelle OpenAI pour générer un rapport technique SEO :
+       - ce rapport inclut priorités (High, Medium, Low) + suggestions
+    3) Retourne la liste de recommandations + le contenu d'origine.
+    """
+
+    # 1) Récupération du contenu
+    article_html = ""
+    if payload.article_content:
+        # Le contenu est directement passé par le front
+        article_html = payload.article_content
+    else:
+        # Sinon, on va chercher l'article sur Shopify
+        if not payload.store or not payload.token or not payload.blog_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Missing store/token/blogId or article_content in request"
+            )
+        # Instancier le blogger
+        blogger = ShopifyBlogger()
+        blogger.shop_url = payload.store
+        blogger.api_token = payload.token
+
+        # Récupérer l'article via blog_id
+        # NB: À toi de voir comment ta classe ShopifyBlogger récupère un article 
+        # (par exemple: blogger.get_article(payload.blog_id))
+        # On simule ici:
+        article_data = blogger.get_article(payload.blog_id)
+        if not article_data or "body" not in article_data:
+            raise HTTPException(status_code=404, detail="Article not found on Shopify")
+
+        article_html = article_data["body"]
+
+    # 2) Appel à OpenAI pour générer un rapport technique
+    # On peut inclure "title" dans le prompt si tu le souhaites
+    openai_client = OpenAIClient()
+    prompt = (
+        f"Tu es un expert SEO technique. Je te fournis un article HTML.\n\n"
+        f"ARTICLE:\n{article_html}\n\n"
+        f"Analyse-le du point de vue SEO/technique: microdonnées, structure HTML, meta tags, "
+        f"optimisation performance, etc.\n"
+        f"Retourne-moi IMPÉRATIVEMENT un JSON avec la liste des problèmes et améliorations possibles. "
+        f"Par exemple, un tableau de type :\n"
+        f"[\n"
+        f"  {{ 'priority': 'High'|'Medium'|'Low', 'issue': '...', 'recommendation': '...' }},\n"
+        f"  ...\n"
+        f"]\n"
+        f"Ne donne pas d'autre texte, juste le JSON."
+    )
+
+    raw_response = openai_client.call_api(
+        api_type="text",
+        model="o1-mini",
+        prompt=prompt,
+    )
+
+    # 3) Tenter de parser le JSON (ou fallback si c'est pas parseable)
+    # Ex: on essaie un simple "json.loads", ou on fait un parsing plus complexe
+    recommendations = []
+    try:
+        # Cherche un tableau JSON dans la réponse
+        # Soit on fait: recommendations = json.loads(raw_response)
+        # Soit on utilise un parse "intelligent" (ex: une regex ou un assistant).
+        recommendations = json.loads(raw_response)
+        if not isinstance(recommendations, list):
+            # On force en liste si l'IA a mal répondu
+            recommendations = []
+    except Exception:
+        # Si on n'arrive pas à parser, on met tout dans "issue"
+        recommendations = [
+            {
+                "priority": "Info",
+                "issue": "Impossible de parser le JSON",
+                "recommendation": raw_response
+            }
+        ]
+
+    # 4) Retour de la réponse
+    return TechnicalAuditResponse(
+        recommendations=recommendations,
+        original_content=article_html
+    )
+
+
+@router.post("/applyTechnicalAudit", response_model=ApplyTechnicalAuditResponse)
+def apply_technical_audit(payload: ApplyTechnicalAuditRequest):
+    """
+    Reçoit :
+    - Le contenu original
+    - Le rapport d'audit (liste de problèmes/recommandations)
+
+    Appelle OpenAI pour "corriger" techniquement l'article en se basant sur le rapport.
+    Retourne le HTML corrigé.
+    """
+    if not payload.original_content.strip():
+        raise HTTPException(status_code=400, detail="Missing original_content")
+
+    # On transforme le rapport en un petit texte à injecter dans le prompt
+    # ex. "High priority: Mettre un alt sur l'image #1..."
+    # On peut faire un tri par priority, etc.
+    # Simplifions ici:
+    report_text = "\n".join(
+        f"- Priority={item.get('priority')}, Issue='{item.get('issue')}', Recommendation='{item.get('recommendation')}'"
+        for item in payload.audit_report
+    )
+
+    openai_client = OpenAIClient()
+    fix_prompt = (
+        f"Voici un article HTML:\n"
+        f"{payload.original_content}\n\n"
+        f"Voici un rapport technique de recommandations:\n"
+        f"{report_text}\n\n"
+        f"Applique toutes ces recommandations sur l'article. "
+        f"Retourne le HTML final corrigé, sans explication supplémentaire."
+    )
+
+    try:
+        updated_html = openai_client.call_api(
+            api_type="text",
+            model="o1-mini",
+            prompt=fix_prompt,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return ApplyTechnicalAuditResponse(updated_content=updated_html)
