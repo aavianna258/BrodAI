@@ -45,7 +45,11 @@ class ShopifyBlogger:
             # print("------------\nAPI RESPONSE\n------------\n", json.dumps(res_dict, indent=4))
 
             try:
-                return dict(res_dict["data"])
+                if response.get("errors"):
+                    print(response["errors"])
+                    raise Exception("Error executing command {operation_name}.")
+                else:
+                    return dict(res_dict["data"])
             except KeyError:
                 raise ExceptionGroup(
                     "Error with Shopify API request.",
@@ -67,7 +71,15 @@ class ShopifyBlogger:
                 "commentPolicy": blog.get("commentPolicy") or "CLOSED",
             }
         }
-        return self._execute_command(operation_name="CreateBlog", variables=variables)
+        response = self._execute_command(
+            operation_name="CreateBlog", variables=variables
+        )
+        print(f"Blog {response['blogCreate']['blog']['title']} created.")
+        return dict(response["blogCreate"]["blog"])
+
+    def delete_blog(self, blog_id: str) -> Dict[str, Any]:
+        variables = {"id": blog_id}
+        return self._execute_command(operation_name="DeleteBlog", variables=variables)
 
     def create_article(
         self, blog_id: str, article: BlogArticle, publish: Optional[bool] = False
@@ -84,7 +96,7 @@ class ShopifyBlogger:
                 or publish,  # if not provided, use publish parameter
                 "publishDate": article.get("publish_date"),
                 "tags": article.get("tags"),
-                # "image": { "altText": "Alt text for the image", "url": "http://example.com/fake_image.jpg"}
+                "image": article.get("image"),
             }
         }
         return self._execute_command(
@@ -106,17 +118,19 @@ class ShopifyBlogger:
         variables = {"id": blog_id}
         return self._execute_command(operation_name="GetBlog", variables=variables)
 
-    def update_article(self, article_id: str, article: BlogArticle) -> Dict[str, Any]:
+    def update_article(
+        self, article_id: str, fields_to_update: Dict[str, str]
+    ) -> Dict[str, Any]:
         variables = {
             "id": article_id,
             "article": {
-                "title": article["title"],
-                "author": {"name": article["author"]},
-                "handle": article.get("handle"),
-                "body": article.get("body"),
-                "summary": article.get("summary"),
-                "isPublished": article.get("is_published"),
-                "tags": article.get("tags"),
+                "title": fields_to_update["title"],
+                "author": {"name": fields_to_update["author"]},
+                "handle": fields_to_update.get("handle"),
+                "body": fields_to_update.get("body"),
+                "summary": fields_to_update.get("summary"),
+                "isPublished": fields_to_update.get("is_published"),
+                "tags": fields_to_update.get("tags"),
             },
         }
         return self._execute_command(
@@ -132,9 +146,42 @@ class ShopifyBlogger:
         response = self._execute_command(
             operation_name="ListBlogsAndArticles", variables=variables
         )
-        articles: Dict[str, List[Dict[str, str]]] = {}
-        for blog in response["blogs"]["nodes"]:
-            articles[blog["id"]] = []
-            for article in blog["articles"]["nodes"]:
-                articles[blog["id"]].append(article)
-        return articles
+        return response
+
+    def create_articles_from_files(
+        self, blog_id: str, articles_filepaths: List[Dict[str, str]]
+    ) -> None:
+        """
+        Creates articles from files.
+        Input: List of dictionaries with keys "info" and "body" containing the filepaths of the article info.json and body.html files.
+        """
+        for filepath in articles_filepaths:
+            with open(filepath["info"], "r") as info_file:
+                article = dict(json.load(info_file))
+                with open(filepath["body"], "r") as body_file:
+                    article["body"] = body_file.read()
+                    self.create_article(
+                        blog_id=blog_id,
+                        article=BlogArticle(**article),  # type: ignore[typeddict-item]
+                        publish=True,
+                    )
+                    print(f"Article {article['title']} created on blog {blog_id}.")
+
+    def update_articles_bodies_from_files(
+        self, articles_filepaths: List[Dict[str, str]]
+    ) -> None:
+        """
+        Updates the body of articles from files.
+        Input: List of dictionaries with keys "info" and "body" containing the filepaths of the article info.json and body.html files.
+        """
+        for filepath in articles_filepaths:
+            with open(filepath["info"], "r") as info_file:
+                article_info = dict(json.load(info_file))
+                with open(filepath["body"], "r") as body_file:
+                    fields_to_update = {"body": body_file.read()}
+                    self.update_article(
+                        article_id=article_info["id"], fields_to_update=fields_to_update
+                    )
+                    print(
+                        f"Article's body successfully updated. ID: {article_info['id']}, Handle: {article_info ["handle"]} ."
+                    )

@@ -44,6 +44,18 @@ mutation CreateBlog($blog: BlogCreateInput!) {
   }
 }
 
+# Delete blog
+mutation DeleteBlog($id: ID!) {
+  blogDelete(id: $id) {
+    deletedBlogId
+    userErrors {
+      code
+      field
+      message
+    }
+  }
+}
+
 # Query to get blog by ID
 query GetBlog($id: ID!) {
   blog(id: $id) {
@@ -120,7 +132,8 @@ mutation PublishArticle($id: ID!) {
   articleUpdate(id: $id, article: {isPublished: true}) {
     article {
       id
-      ...ArticleData
+      title
+      handle
     }
     userErrors {
       code
@@ -136,9 +149,12 @@ query ListBlogsAndArticles {
     nodes {
       id
       title
+      handle
       articles(first: 10) {
         nodes {
-          ...ArticleData
+          id
+          title
+          handle
         }
       }
     }
