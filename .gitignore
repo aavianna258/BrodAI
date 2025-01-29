@@ -3,6 +3,7 @@
 .ruff_cache/
 scripts/test.py
 scripts/shopify_test.py
+out.json
 
 ##########################  DEFAULT FROM GITHUB ##################################
 # Byte-compiled / optimized / DLL files
