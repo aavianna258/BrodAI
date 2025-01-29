@@ -11,6 +11,8 @@ from src.packages.keyword_research.keyword_research import KeywordResearcher
 from src.packages.bloggers.shopify_blogger import ShopifyBlogger
 from src.packages.utils.openai import OpenAIClient
 from src.packages.utils.misc import extract_json
+from src.packages.utils.web_scraper import extract_website_info
+
 
 from dotenv import load_dotenv
 import os
@@ -133,20 +135,40 @@ def keyword_research(request: KeywordRequest) -> Dict[str, List[BrodAIKeyword]]:
 
 
 
-@app.post("/analysis", response_model=AnalysisResponse)
-def analyze_domain(payload: AnalysisRequest):
-    """
-    Calls our SeoAnalyzer to run a domain analysis using SEMRush, 
-    then returns the results.
-    """
-    domain = payload.domain
+class AnalysisRequest(BaseModel):
+    domain: str
 
-    analyzer = SeoAnalyzer(api_key=os.getenv("SEMRUSH_API_KEY"))
+class AnalysisResponse(BaseModel):
+    status: int
+    data: Dict[str, Any]
+
+@app.post("/analysis")
+def analyze_domain(payload: AnalysisRequest):
+    domain = payload.domain
+    analyzer = SeoAnalyzer()
 
     try:
-        analysis_data = analyzer.analyze_domain(domain)
-        return AnalysisResponse(status=200, data=analysis_data)
+        # 1) Extract h1/h2, meta_title, meta_description
+        scraped_info = extract_website_info(domain)
+        
+        # 2) Pass domain + scraped_info to the SeoAnalyzer
+        analysis_data = analyzer.analyze_domain(domain, scraped_info)
+
+        # 3) Optionally, also attach the scraped info so the frontend can see it
+        analysis_data["scraped_info"] = scraped_info
+
+        return {"status": 200, "data": analysis_data}
     except Exception as e:
+        return {"status": 500, "data": {"error": str(e)}}
+
+    except ValueError as ve:
+        # If the site scraping fails or is invalid
+        return AnalysisResponse(
+            status=500,
+            data={"error": f"Scraper error: {str(ve)}"}
+        )
+    except Exception as e:
+        # General fallback
         return AnalysisResponse(
             status=500,
             data={"error": f"Failed to analyze domain: {str(e)}"}
@@ -362,3 +384,56 @@ def external_link_building(payload: ExternalLinkBuildingRequest):
     return {
         "updated_content": updated_content
     }
+
+# ----------------------------------------------------------------------------------------
+# 3) RefineContent feature
+# ----------------------------------------------------------------------------------------
+
+class RefineContentRequest(BaseModel):
+    content: str
+    refine_instruction: str
+
+@app.post("/refineContent")
+def refine_content(payload: RefineContentRequest):
+    """
+    Receives the current content (HTML) and some "refine_instruction".
+    For example, "Make the tone more formal" or "Shorten the second paragraph" etc.
+    Returns updated content.
+    """
+    content = payload.content.strip()
+    instruction = payload.refine_instruction.strip()
+
+    if not content:
+        raise HTTPException(status_code=400, detail="Missing content for refinement")
+
+    if not instruction:
+        raise HTTPException(status_code=400, detail="Missing refine instruction")
+
+    # 1) Initialize OpenAI
+    openai_client = OpenAIClient()
+
+    # 2) Construct a prompt
+    # For example:
+    prompt = (
+        f"Voici le contenu HTML suivant:\n"
+        f"{content}\n\n"
+        f"Instruction de refinement: {instruction}\n\n"
+        f"Retourne le texte HTML modifié en respectant l'instruction. "
+        f"Ne rajoute pas d'explications, seulement le contenu final."
+    )
+
+    try:
+        refined_content = openai_client.call_api(
+            api_type="text",
+            model="o1-mini",
+            prompt=prompt,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {
+        "updated_content": refined_content
+    }
+
+
+

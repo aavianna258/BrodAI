@@ -7,33 +7,40 @@ import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const handleSignOut = () => {
+    // TODO: Replace with your actual sign-out logic
+    alert('Signing out...');
+  };
+
   return (
     <>
-      {/* 
-        Same gradient as Hero: from-[#ede9fe] to-[#f3e8ff] 
-        No border, so it flows seamlessly into the Hero background.
-      */}
-      <header className="w-full bg-gradient-to-r from-[#e0ecff] to-[#f0f4ff]">
+      <header className="w-full bg-gradient-to-r from-[#fffff] to-[#f3e8ff]">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold">
+          <Link href="/" className="text-xl font-bold">
             BrodAI
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/#pricing" className="hover:opacity-80 transition-opacity">
-              Pricing
-            </Link>
+          <nav className="hidden md:flex items-center space-x-6 text-sm">
+            {/* Keyword Researcher */}
             <Link href="/keyword-research" className="hover:opacity-80 transition-opacity">
               Keyword Researcher
             </Link>
-            {/* Example: Hard gradient button */}
-            <Link href="https://calendly.com/yassirhanafi17/30min">
-              <span className="hard-gradient-button px-4 py-2 rounded-lg font-semibold cursor-pointer text-white">
-                Book a Demo
-              </span>
+
+            {/* Link Builder */}
+            <Link href="/link-builder" className="hover:opacity-80 transition-opacity">
+              Link Builder
             </Link>
+
+            {/* My Profile (emoji) => on click sign out */}
+            <button
+              onClick={handleSignOut}
+              className="hover:opacity-80 transition-opacity text-gray-800 flex items-center gap-1"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              👤 BerberHouse Profile
+            </button>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -41,11 +48,12 @@ export default function Navbar() {
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle Menu"
+              style={{ background: 'none', border: 'none' }}
             >
               {isMenuOpen ? (
-                <CloseOutlined className="text-2xl" />
+                <CloseOutlined className="text-xl" />
               ) : (
-                <MenuOutlined className="text-2xl" />
+                <MenuOutlined className="text-xl" />
               )}
             </button>
           </div>
@@ -54,28 +62,37 @@ export default function Navbar() {
         {/* Mobile Nav Dropdown */}
         {isMenuOpen && (
           <div className="md:hidden bg-gradient-to-r from-[#ede9fe] to-[#f3e8ff] px-4 py-3">
-            <nav className="flex flex-col space-y-3">
+            <nav className="flex flex-col space-y-3 text-sm">
               <Link
-                href="#pricing"
+                href="/keyword-research"
                 className="hover:opacity-80 transition-opacity text-gray-800"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Pricing
+                Keyword Researcher
               </Link>
-              <Link href="/keyword-research" className="hover:opacity-80 transition-opacity text-gray-800">
-              Keyword Researcher
+              <Link
+                href="/link-builder"
+                className="hover:opacity-80 transition-opacity text-gray-800"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Link Builder
               </Link>
-              <Link href="https://calendly.com/yassirhanafi17/30min" onClick={() => setIsMenuOpen(false)}>
-                <span className="hard-gradient-button px-4 py-2 rounded-lg font-semibold inline-block text-center text-white">
-                  Book a Demo
-                </span>
-              </Link>
+              <button
+                onClick={() => {
+                  handleSignOut();
+                  setIsMenuOpen(false);
+                }}
+                className="hover:opacity-80 transition-opacity text-left text-gray-800 flex items-center gap-1"
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                👤 My Profile
+              </button>
             </nav>
           </div>
         )}
       </header>
 
-      {/* Hard gradient button animation */}
+      {/* Hard gradient button animation (retained if needed) */}
       <style jsx>{`
         @keyframes hardGradientShift {
           0% {
@@ -96,6 +113,16 @@ export default function Navbar() {
           );
           background-size: 200% 200%;
           animation: hardGradientShift 3s ease infinite;
+        }
+
+        /* Responsive classes if you're simulating Tailwind breakpoints */
+        @media (min-width: 768px) {
+          .md\\:flex {
+            display: flex !important;
+          }
+          .md\\:hidden {
+            display: none !important;
+          }
         }
       `}</style>
     </>

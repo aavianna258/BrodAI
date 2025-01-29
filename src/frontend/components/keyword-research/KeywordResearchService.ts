@@ -1,4 +1,3 @@
-// src/services/keywordResearchService.ts
 export interface IBrodAIKeyword {
     keyword: string;
     traffic: number;

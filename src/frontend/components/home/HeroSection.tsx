@@ -3,11 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Input, Button, message, Spin } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
+
 import DomainAnalysisReport from '@/components/domain-analysis/DomainAnalysisReport';
 import fetchDomainAnalysis from '@/components/domain-analysis/fetchDomainAnalysis';
+import { IBrodAIKeyword } from '@/components/domain-analysis/fetchKeywordResearch';
 
-// 1) TYPING STRINGS (as in your code)
 export default function HeroSection() {
+  // --------------------------------------------------------------------------
+  // 1) Setup for TYPING TEXT
+  // --------------------------------------------------------------------------
   const lines = [
     'Rank 10x faster at 95% lower cost.',
     'The next era of frictionless SEO.',
@@ -29,6 +33,7 @@ export default function HeroSection() {
 
     function handleTyping() {
       if (isTypingForward) {
+        // Typing forward
         if (displayText.length < currentLine.length) {
           setDisplayText(currentLine.slice(0, displayText.length + 1));
           typingTimeout = setTimeout(handleTyping, TYPING_SPEED);
@@ -41,7 +46,7 @@ export default function HeroSection() {
           setDisplayText(displayText.slice(0, -1));
           typingTimeout = setTimeout(handleTyping, DELETING_SPEED);
         } else {
-          // Next line
+          // Move to next line
           const nextIndex = (currentLineIndex + 1) % lines.length;
           setCurrentLineIndex(nextIndex);
           setIsTypingForward(true);
@@ -57,32 +62,51 @@ export default function HeroSection() {
     return () => clearTimeout(typingTimeout);
   }, [displayText, isTypingForward, currentLineIndex, lines]);
 
-  // 2) STATE FOR DOMAIN + ANALYSIS
+  // --------------------------------------------------------------------------
+  // 2) State for Domain, Analysis, and Suggested Keywords
+  // --------------------------------------------------------------------------
   const [domain, setDomain] = useState('');
   const [analysisData, setAnalysisData] = useState<any | null>(null);
+  const [suggestedKeywords, setSuggestedKeywords] = useState<IBrodAIKeyword[] | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // 3) HANDLER to call the backend
+  // --------------------------------------------------------------------------
+  // 3) Handler to call the backend
+  // --------------------------------------------------------------------------
   const handleDomainAnalyze = async () => {
     if (!domain.trim()) {
       message.warning('Please enter a valid domain.');
       return;
     }
+
     setLoading(true);
     setAnalysisData(null);
+    setSuggestedKeywords(null);
 
     try {
+      // 1) Fetch domain analysis (which includes suggested_keywords in the same response)
       const result = await fetchDomainAnalysis(domain);
+
+      // 2) Store the analysis data
       setAnalysisData(result);
+
+      // 3) Also check if the backend returned suggested keywords
+      if (result.suggested_keywords) {
+        setSuggestedKeywords(result.suggested_keywords);
+      }
+
     } catch (error: any) {
       message.error(error.message || 'Error analyzing domain');
+      // Optionally store error in analysisData so DomainAnalysisReport can display it
       setAnalysisData({ error: error.message });
     } finally {
       setLoading(false);
     }
   };
 
-  // 4) RENDER
+  // --------------------------------------------------------------------------
+  // 4) Render
+  // --------------------------------------------------------------------------
   return (
     <div
       className="bg-gradient-to-r from-[#e0ecff] to-[#f0f4ff] text-center"
@@ -153,13 +177,10 @@ export default function HeroSection() {
           {/* Show results if we have them */}
           {analysisData && !loading && (
             <div style={{ marginTop: 40 }}>
-              {/* 
-                  We'll pass domain and analysisData to your 
-                  DomainAnalysisReport component. 
-              */}
               <DomainAnalysisReport
                 domain={domain}
                 analysisData={analysisData}
+                suggestedKeywords={suggestedKeywords}
               />
             </div>
           )}

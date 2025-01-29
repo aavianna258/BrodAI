@@ -18,11 +18,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        {/* Nav is transparent; Hero will define the gradient. */}
+    <html lang="en" className={inter.className}>
+      <body
+        style={{
+          margin: 0,
+          padding: 0,
+          background: '#f8f9ff',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          // No background color/animation—just default or from global CSS
+        }}
+      >
+        {/* NavBar */}
         <Navbar />
-        <main>{children}</main>
+
+        {/* Main content area */}
+        <main style={{ flex: '1 0 auto' }}>
+          {children}
+        </main>
+
+        {/* Footer */}
         <Footer />
       </body>
     </html>

@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { Card, Table, Button, Progress } from 'antd';
-import { useRouter } from 'next/navigation'; // or "next/router" if using Next 12
-// If you're on Next 12 or below, import Link from 'next/link'
+import { IBrodAIKeyword } from '@/components/domain-analysis/fetchKeywordResearch';
 
 interface ITopKeyword {
   keyword: string;
@@ -13,9 +12,9 @@ interface ITopKeyword {
 
 interface IAnalysisData {
   monthlyTraffic?: number;
-  scoreNumeric?: number;       // 0-100
+  scoreNumeric?: number;       // e.g. 0-100
   performanceRating?: string;  // e.g. "Needs Improvement", "Good", etc.
-  topKeywords?: ITopKeyword[];
+  topKeywords?: ITopKeyword[]; // existing best-performing keywords from analysis
   nextSteps?: string[];
   error?: string;
 }
@@ -23,26 +22,22 @@ interface IAnalysisData {
 type DomainAnalysisReportProps = {
   domain: string;
   analysisData: IAnalysisData | null;
+  suggestedKeywords: IBrodAIKeyword[] | null; // from /keyword_research
 };
 
 export default function DomainAnalysisReport({
   domain,
   analysisData,
+  suggestedKeywords,
 }: DomainAnalysisReportProps) {
-  // State to toggle the "Next Steps" section
   const [showNextSteps, setShowNextSteps] = useState(false);
-
-  // Next.js navigation hook (Next 13+), or use Link if you prefer
-  const router = useRouter();
 
   if (!analysisData) return null;
 
   // If there's an error, display it
   if (analysisData.error) {
     return (
-      <Card
-        style={{ textAlign: 'left', background: '#f9fafb', marginTop: 16 }}
-      >
+      <Card style={{ textAlign: 'left', background: '#f9fafb', marginTop: 16 }}>
         <p style={{ color: 'red', fontWeight: 600 }}>
           Error: {analysisData.error}
         </p>
@@ -50,96 +45,113 @@ export default function DomainAnalysisReport({
     );
   }
 
-  // Prepare the table columns for the best performing keywords
-  const columns = [
-    { title: 'Keyword', dataIndex: 'keyword', key: 'keyword' },
-    { title: 'Position', dataIndex: 'position', key: 'position' },
-    { title: 'Volume', dataIndex: 'volume', key: 'volume' },
-  ];
-
-  return (
-    <div style={{ marginTop: 16 }}>
-      {/* 1) SEO Score Card */}
-      <Card
+  // --------------------------------------------------------------------------
+  // 1) Card: SEO Score & Monthly Traffic
+  // --------------------------------------------------------------------------
+  const seoScoreCard = (
+    <Card
+      style={{
+        textAlign: 'left',
+        background: '#f9fafb',
+        marginBottom: 16,
+      }}
+      bordered={false}
+    >
+      <p
         style={{
-          textAlign: 'left',
-          background: '#f9fafb',
+          fontWeight: 600,
           marginBottom: 16,
+          textAlign: 'center',
+          fontSize: '1.25rem',
         }}
-        bordered={false}
       >
-        <p
-          style={{
-            fontWeight: 600,
-            marginBottom: 16,
-            textAlign: 'center',
-            fontSize: '1.25rem',
+        SEO Score for <span style={{ color: '#2563EB' }}>{domain}</span>
+      </p>
+
+      <div
+        style={{
+          background: '#fff',
+          borderLeft: '4px solid #059669',
+          padding: 12,
+        }}
+      >
+        <p style={{ margin: '0 0 8px 0' }}>
+          <strong>Score (out of 100):</strong>{' '}
+          {analysisData.scoreNumeric ?? 0}
+        </p>
+        <Progress
+          percent={analysisData.scoreNumeric ?? 0}
+          status="active"
+          strokeColor={{
+            '0%': '#34d399',
+            '100%': '#059669',
           }}
-        >
-          SEO Score for <span style={{ color: '#2563EB' }}>{domain}</span>
+        />
+
+        {/* Monthly Traffic Just Under the Score */}
+        <p style={{ marginTop: 12 }}>
+          <strong>Monthly Traffic:</strong>{' '}
+          {analysisData.monthlyTraffic ?? 0}
         </p>
 
-        <div
-          style={{
-            background: '#fff',
-            borderLeft: '4px solid #059669',
-            padding: 12,
-          }}
-        >
-          <p style={{ margin: '0 0 8px 0' }}>
-            <strong>Score (out of 100):</strong>{' '}
-            {analysisData.scoreNumeric ?? 0}
-          </p>
-          <Progress
-            percent={analysisData.scoreNumeric ?? 0}
-            status="active"
-            strokeColor={{
-              '0%': '#34d399',
-              '100%': '#059669',
+        {/* Performance Rating */}
+        <p style={{ marginTop: 8 }}>
+          <strong>Performance Rating:</strong>{' '}
+          {analysisData.performanceRating ?? 'N/A'}
+        </p>
+      </div>
+
+      {/*  Next Steps */}
+      {analysisData.nextSteps && analysisData.nextSteps.length > 0 && (
+        <div style={{ marginTop: 16, textAlign: 'center' }}>
+          <Button
+            onClick={() => setShowNextSteps(!showNextSteps)}
+            style={{
+              backgroundColor: '#2563EB',
+              borderColor: '#2563EB',
+              color: '#fff',
             }}
-          />
-          <p style={{ marginTop: 8 }}>
-            <strong>Performance Rating:</strong>{' '}
-            {analysisData.performanceRating ?? 'N/A'}
-          </p>
-        </div>
+          >
+            {showNextSteps ? 'Hide Next Steps' : 'Show Next Steps'}
+          </Button>
 
-        {/* Toggleable Next Steps if you want them under the score */}
-        {analysisData.nextSteps && analysisData.nextSteps.length > 0 && (
-          <div style={{ marginTop: 16, textAlign: 'center' }}>
-            <Button
-              onClick={() => setShowNextSteps(!showNextSteps)}
+          {showNextSteps && (
+            <Card
               style={{
-                backgroundColor: '#2563EB',
-                borderColor: '#2563EB',
-                color: '#fff',
+                textAlign: 'left',
+                background: '#f9fafb',
+                marginTop: 16,
               }}
+              bordered={false}
             >
-              {showNextSteps ? 'Hide Next Steps' : 'Show Next Steps'}
-            </Button>
+              <strong>Recommended Next Steps:</strong>
+              <ul style={{ marginTop: 8 }}>
+                {analysisData.nextSteps.map((step, idx) => (
+                  <li key={idx}>{step}</li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </div>
+      )}
+    </Card>
+  );
 
-            {showNextSteps && (
-              <Card
-                style={{
-                  textAlign: 'left',
-                  background: '#f9fafb',
-                  marginTop: 16,
-                }}
-                bordered={false}
-              >
-                <strong>Recommended Next Steps:</strong>
-                <ul style={{ marginTop: 8 }}>
-                  {analysisData.nextSteps.map((step, idx) => (
-                    <li key={idx}>{step}</li>
-                  ))}
-                </ul>
-              </Card>
-            )}
-          </div>
-        )}
-      </Card>
+  // --------------------------------------------------------------------------
+  // 2) Table: Best Performing Keywords (if from /analysis)
+  // --------------------------------------------------------------------------
+  let bestPerformingKeywordsBlock = null;
+  if (
+    analysisData.topKeywords &&
+    analysisData.topKeywords.length > 0
+  ) {
+    const bestKeywordsColumns = [
+      { title: 'Keyword', dataIndex: 'keyword', key: 'keyword' },
+      { title: 'Position', dataIndex: 'position', key: 'position' },
+      { title: 'Volume', dataIndex: 'volume', key: 'volume' },
+    ];
 
-      {/* 2) Domain Metrics (Monthly Traffic) */}
+    bestPerformingKeywordsBlock = (
       <Card
         style={{ textAlign: 'left', background: '#f9fafb', marginBottom: 16 }}
         bordered={false}
@@ -147,70 +159,87 @@ export default function DomainAnalysisReport({
         <p
           style={{
             fontWeight: 600,
-            marginBottom: 16,
+            marginBottom: 8,
             textAlign: 'center',
             fontSize: '1.25rem',
           }}
         >
-          Domain Metrics
+          Best Performing Keywords (Current)
         </p>
-        <div
-          style={{
-            background: '#fff',
-            borderLeft: '4px solid #2563EB',
-            padding: 12,
-            marginBottom: 16,
-          }}
-        >
-          <p style={{ margin: 0 }}>
-            <strong>Monthly Traffic:</strong>{' '}
-            {analysisData.monthlyTraffic ?? 0}
-          </p>
-        </div>
+        <Table
+          columns={bestKeywordsColumns}
+          dataSource={analysisData.topKeywords.map((kw, idx) => ({
+            key: idx,
+            ...kw,
+          }))}
+          pagination={false}
+          style={{ marginBottom: 16 }}
+        />
       </Card>
+    );
+  }
 
-      {/* 3) Best Performing Keywords */}
-      {analysisData.topKeywords && analysisData.topKeywords.length > 0 && (
-        <Card
-          style={{ textAlign: 'left', background: '#f9fafb', marginBottom: 16 }}
-          bordered={false}
-        >
-          <p
-            style={{
-              fontWeight: 600,
-              marginBottom: 8,
-              textAlign: 'center',
-              fontSize: '1.25rem',
-            }}
-          >
-            Best Performing Keywords
-          </p>
-          <Table
-            columns={columns}
-            dataSource={analysisData.topKeywords.map((kw, idx) => ({
-              key: idx,
-              ...kw,
-            }))}
-            pagination={false}
-            style={{ marginBottom: 16 }}
-          />
-        </Card>
-      )}
+  // --------------------------------------------------------------------------
+  // 3) Table: “Suggested Keywords to Target” (from /keyword_research)
+  // --------------------------------------------------------------------------
+  let suggestedKeywordsBlock = null;
+  if (suggestedKeywords && suggestedKeywords.length > 0) {
+    const suggestedKeywordsColumns = [
+      { title: 'Keyword', dataIndex: 'keyword', key: 'keyword' },
+      { title: 'Traffic', dataIndex: 'traffic', key: 'traffic' },
+      { title: 'Difficulty', dataIndex: 'difficulty', key: 'difficulty' },
+      {
+        title: 'Perf. Score',
+        dataIndex: 'performance_score',
+        key: 'performance_score',
+      },
+    ];
 
-      {/* 4) Button to Navigate to Keyword Research Page */}
-      <div style={{ textAlign: 'center', marginTop: 16 }}>
-        <Button
-          onClick={() => router.push('/keyword-research')}
+    suggestedKeywordsBlock = (
+      <Card
+        style={{ textAlign: 'left', background: '#f9fafb', marginBottom: 16 }}
+        bordered={false}
+      >
+        <p
           style={{
-            backgroundColor: '#059669',
-            borderColor: '#059669',
-            color: '#fff',
-            fontWeight: 'bold',
+            fontWeight: 600,
+            marginBottom: 8,
+            textAlign: 'center',
+            fontSize: '1.25rem',
           }}
         >
-          See New Keywords Found by Our Intelligent Agent
-        </Button>
-      </div>
+          Suggested Keywords to Target
+        </p>
+        <Table
+          columns={suggestedKeywordsColumns}
+          dataSource={suggestedKeywords.map((kw, idx) => ({
+            key: idx,
+            ...kw,
+          }))}
+          pagination={false}
+          style={{ marginBottom: 16 }}
+        />
+      </Card>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Final Rendering
+  // --------------------------------------------------------------------------
+  return (
+    <div style={{ marginTop: 16 }}>
+      {seoScoreCard}
+
+      {/* Best-Performing Keywords from SEMRush or analysis */}
+      {bestPerformingKeywordsBlock}
+
+      {/* Suggested Keywords from BrodAI's /keyword_research */}
+      {suggestedKeywordsBlock}
+
+      {/* If you want a button to go to a separate page for deeper KW research, keep it here */}
+      {/* <div style={{ textAlign: 'center', marginTop: 16 }}>
+        <Button onClick={() => router.push('/keyword-research')} /* or next link * />
+      </div> */}
     </div>
   );
 }

@@ -130,6 +130,7 @@ export default function Step1(props: Step1Props) {
             Target keyword: <span className="highlightKeyword">{keyword}</span> <br/>
             Market: <span style={{ color: '#2196f3' }}>France</span>
           </p>
+          {/* 
           <Button block style={{ marginBottom: '0.5rem' }} onClick={() => {
             message.info("Show metrics: volume, difficulty, BrodAI score, intent... (coming soon)");
           }}>
@@ -139,7 +140,7 @@ export default function Step1(props: Step1Props) {
             message.info("Show competition: who is ranking, type of pages... (coming soon)");
           }}>
             Show Competition
-          </Button>
+          </Button> */}
 
           <p style={{ marginBottom: '1rem', fontSize: '0.95rem' }}>
             BrodAI analyzed all these informations to help you rank on the first page!
