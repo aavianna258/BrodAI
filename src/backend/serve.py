@@ -468,6 +468,7 @@ def insert_ctas(payload: InsertCTAsRequest):
         prompt = (
             f"Voici un article HTML:\n{content}\n\n"
             f"Insère {cta_count} CTA (boutons) en français, "
+            f"avec un design très moderne et il doit etre centré,"
             f"où c'est pertinent, en utilisant une balise <div class='cta-button'>"
             f" ou similaire. Ne renvoie que le HTML final.\n"
         )
@@ -536,8 +537,8 @@ def apply_images(payload: ApplyImagesRequest):
         for prompt in payload.images:
             try:
                 image_url = openai_client.call_api(
-                    api_type="images",
-                    model="dall-e",
+                    api_type="image",
+                    model="dall-e-3",
                     prompt=prompt
                 )
                 # On suppose que call_api(..., api_type="images") renvoie directement un url
@@ -550,75 +551,95 @@ def apply_images(payload: ApplyImagesRequest):
 
     return {"updated_content": updated_content}
 
-
 class TechnicalAuditRequest(BaseModel):
     store: Optional[str] = None
     token: Optional[str] = None
     blog_id: Optional[str] = None
-
-    # Si on n'a pas envie de fetch depuis Shopify, on peut passer directement le contenu
     article_content: Optional[str] = None
     title: Optional[str] = None
 
-
 class TechnicalAuditResponse(BaseModel):
-    # On renvoie la liste de recommandations
-    # Par exemple, un tableau d'objets { priority, message }
     recommendations: List[Dict[str, Any]] = []
-    # On peut renvoyer aussi le HTML d'origine (pour l'afficher si besoin)
     original_content: Optional[str] = None
-
 
 class ApplyTechnicalAuditRequest(BaseModel):
     original_content: str
-    # Le "rapport" / la liste de changes
-    # Tu peux stocker ce que tu veux dedans (texte, JSON, etc.)
-    # et l'envoyer dans le prompt
     audit_report: List[Dict[str, Any]]
-
 
 class ApplyTechnicalAuditResponse(BaseModel):
     updated_content: str
 
+# ==== Cette fonction parse le JSON renvoyé par l'IA, 
+#      en essayant plusieurs stratégies ====
+
+def extract_recommendations_from_raw_response(raw_response: str) -> List[Dict[str, Any]]:
+    """
+    1) Tente un json.loads direct
+    2) Sinon, cherche un bloc ```json ... ```
+    3) Sinon fallback
+    """
+    # 1) Tentative de parse direct
+    try:
+        data = json.loads(raw_response)
+        if isinstance(data, list):
+            return data
+    except Exception:
+        pass
+
+    # 2) Cherche un bloc ```json ... ```
+    match = re.search(r"```json\s*([\s\S]+?)\s*```", raw_response, flags=re.IGNORECASE)
+    if match:
+        block = match.group(1)  # ce qu'il y a entre ```json et ```
+        try:
+            data2 = json.loads(block)
+            if isinstance(data2, list):
+                return data2
+        except Exception:
+            pass
+
+    # 3) Fallback : impossible de parser => on renvoie un "Info" 
+    return [
+        {
+            "priority": "Info",
+            "issue": "Impossible de parser le JSON",
+            "recommendation": raw_response
+        }
+    ]
+
+# Exemple d’imports pour OpenAIClient et ShopifyBlogger
+# from src.packages.bloggers.shopify_blogger import ShopifyBlogger
+# from src.packages.utils.openai import OpenAIClient
 
 @app.post("/technicalAudit", response_model=TechnicalAuditResponse)
 def technical_audit(payload: TechnicalAuditRequest):
     """
     1) Récupère le HTML de l'article (depuis Shopify ou depuis le payload).
-    2) Appelle OpenAI pour générer un rapport technique SEO :
-       - ce rapport inclut priorités (High, Medium, Low) + suggestions
-    3) Retourne la liste de recommandations + le contenu d'origine.
+    2) Appelle OpenAI pour générer un rapport technique SEO (JSON).
+    3) Retourne la liste de recommandations + le contenu d'origine (HTML).
     """
-
-    # 1) Récupération du contenu
     article_html = ""
+
+    # Récupération du contenu
     if payload.article_content:
-        # Le contenu est directement passé par le front
         article_html = payload.article_content
     else:
-        # Sinon, on va chercher l'article sur Shopify
         if not payload.store or not payload.token or not payload.blog_id:
             raise HTTPException(
                 status_code=400,
                 detail="Missing store/token/blogId or article_content in request"
             )
-        # Instancier le blogger
         blogger = ShopifyBlogger()
         blogger.shop_url = payload.store
         blogger.api_token = payload.token
 
         # Récupérer l'article via blog_id
-        # NB: À toi de voir comment ta classe ShopifyBlogger récupère un article 
-        # (par exemple: blogger.get_article(payload.blog_id))
-        # On simule ici:
         article_data = blogger.get_article(payload.blog_id)
         if not article_data or "body" not in article_data:
             raise HTTPException(status_code=404, detail="Article not found on Shopify")
 
         article_html = article_data["body"]
 
-    # 2) Appel à OpenAI pour générer un rapport technique
-    # On peut inclure "title" dans le prompt si tu le souhaites
+    # Appel OpenAI
     openai_client = OpenAIClient()
     prompt = (
         f"Tu es un expert SEO technique. Je te fournis un article HTML.\n\n"
@@ -633,35 +654,16 @@ def technical_audit(payload: TechnicalAuditRequest):
         f"]\n"
         f"Ne donne pas d'autre texte, juste le JSON."
     )
-
     raw_response = openai_client.call_api(
         api_type="text",
         model="o1-mini",
         prompt=prompt,
     )
 
-    # 3) Tenter de parser le JSON (ou fallback si c'est pas parseable)
-    # Ex: on essaie un simple "json.loads", ou on fait un parsing plus complexe
-    recommendations = []
-    try:
-        # Cherche un tableau JSON dans la réponse
-        # Soit on fait: recommendations = json.loads(raw_response)
-        # Soit on utilise un parse "intelligent" (ex: une regex ou un assistant).
-        recommendations = json.loads(raw_response)
-        if not isinstance(recommendations, list):
-            # On force en liste si l'IA a mal répondu
-            recommendations = []
-    except Exception:
-        # Si on n'arrive pas à parser, on met tout dans "issue"
-        recommendations = [
-            {
-                "priority": "Info",
-                "issue": "Impossible de parser le JSON",
-                "recommendation": raw_response
-            }
-        ]
+    # On parse le JSON en utilisant la fonction utilitaire
+    recommendations = extract_recommendations_from_raw_response(raw_response)
 
-    # 4) Retour de la réponse
+    # On renvoie un TechnicalAuditResponse => le front aura un array de recos direct
     return TechnicalAuditResponse(
         recommendations=recommendations,
         original_content=article_html
@@ -671,20 +673,16 @@ def technical_audit(payload: TechnicalAuditRequest):
 @app.post("/applyTechnicalAudit", response_model=ApplyTechnicalAuditResponse)
 def apply_technical_audit(payload: ApplyTechnicalAuditRequest):
     """
-    Reçoit :
-    - Le contenu original
-    - Le rapport d'audit (liste de problèmes/recommandations)
-
-    Appelle OpenAI pour "corriger" techniquement l'article en se basant sur le rapport.
+    Reçoit:
+      - Le contenu original
+      - Le rapport d'audit (liste de problèmes/recommandations)
+    Demande à OpenAI de corriger l'article selon ces recommandations
     Retourne le HTML corrigé.
     """
     if not payload.original_content.strip():
         raise HTTPException(status_code=400, detail="Missing original_content")
 
-    # On transforme le rapport en un petit texte à injecter dans le prompt
-    # ex. "High priority: Mettre un alt sur l'image #1..."
-    # On peut faire un tri par priority, etc.
-    # Simplifions ici:
+    # On prépare le texte des recos dans un format un peu plus "lisible" pour GPT
     report_text = "\n".join(
         f"- Priority={item.get('priority')}, Issue='{item.get('issue')}', Recommendation='{item.get('recommendation')}'"
         for item in payload.audit_report
@@ -710,3 +708,57 @@ def apply_technical_audit(payload: ApplyTechnicalAuditRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
     return ApplyTechnicalAuditResponse(updated_content=updated_html)
+
+
+
+
+class WebAuditRequest(BaseModel):
+    url: str
+
+@app.post("/webAudit", response_model=TechnicalAuditResponse)
+def web_audit(payload: WebAuditRequest):
+    """
+    1) Scrappe le HTML de la page (payload.url).
+    2) Envoie ce HTML à OpenAI (même prompt que l'audit).
+    3) Retourne la liste de recos + le HTML d'origine.
+    """
+    website_url = payload.url.strip()
+    if not website_url.startswith("http"):
+        raise HTTPException(status_code=400, detail="URL must start with http:// or https://")
+
+    # 1) Scraping
+    try:
+        resp = requests.get(website_url, timeout=10)
+        if resp.status_code != 200:
+            raise HTTPException(status_code=400, detail=f"Cannot fetch URL, status {resp.status_code}")
+        raw_html = resp.text
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error scraping URL: {str(e)}")
+
+    # 2) Appel OpenAI (même prompt que pour l'article)
+    openai_client = OpenAIClient()
+    prompt = (
+        f"Tu es un expert SEO technique. Je te fournis le code HTML d'un site web.\n\n"
+        f"HTML:\n{raw_html}\n\n"
+        f"Analyse-le du point de vue SEO/technique (microdonnées, structure, meta tags...).\n"
+        f"Retourne-moi IMPÉRATIVEMENT un JSON sous forme de tableau, par ex:\n"
+        f"[\n"
+        f"  {{ 'priority': 'High'|'Medium'|'Low', 'issue': '...', 'recommendation': '...' }},\n"
+        f"  ...\n"
+        f"]\n"
+        f"Ne donne pas d'autres explications, juste le JSON pur."
+    )
+
+    raw_response = openai_client.call_api(
+        api_type="text",
+        model="o1-mini",
+        prompt=prompt,
+    )
+
+    # 3) Parser la réponse (même fonction que /technicalAudit)
+    recommendations = extract_recommendations_from_raw_response(raw_response)
+
+    return TechnicalAuditResponse(
+        recommendations=recommendations,
+        original_content=raw_html
+    )

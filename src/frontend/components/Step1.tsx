@@ -5,6 +5,11 @@ import {
   Button, Input, Select, Spin, message, Radio, Collapse, Modal
 } from "antd";
 
+import PublishModal from "./PublishModal";  // <-- Import de ton composant modal
+
+import { Tag } from "antd";  // <-- j'importe Tag d'Ant Design
+
+
 const { TextArea } = Input;
 
 type Step1Props = {
@@ -107,6 +112,9 @@ export default function Step1(props: Step1Props) {
   // État local pour indiquer quelle action est en cours ("refine", "cta", "images", etc.)
   // Ainsi, on peut afficher un spinner sur le bouton correspondant.
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+
+  const [publishModalOpen, setPublishModalOpen] = useState(false);
+
 
   // === States pour le Technical Audit
   const [techAuditModalOpen, setTechAuditModalOpen] = useState(false);
@@ -386,6 +394,18 @@ export default function Step1(props: Step1Props) {
     img { max-width: 100%; height: auto; margin: 0.5rem 0; }
     .highlightKeyword { color: #e91e63; font-weight: bold; }
   `;
+  const getPriorityColor = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case "high":
+        return "red";
+      case "medium":
+        return "orange";
+      case "low":
+        return "green";
+      default:
+        return "blue"; // fallback
+    }
+  };
 
   return (
     <>
@@ -412,7 +432,7 @@ export default function Step1(props: Step1Props) {
             type="primary"
             block
             style={{ marginBottom: '1rem' }}
-            onClick={handleClickPublish}
+            onClick={() => setPublishModalOpen(true)}
             disabled={loadingAction === "publish"}
           >
             {loadingAction === "publish" ? <><Spin /> Publishing...</> : "Publish"}
@@ -730,15 +750,16 @@ export default function Step1(props: Step1Props) {
 
       {/* Modal Publish => si tu veux un modal "officiel", 
           ici on l'a laissé vide pour l'exemple. */}
-      <Modal
-        title="Publish to Shopify"
-        open={isPublishModalOpen}
-        onOk={() => {}}
-        onCancel={() => {}}
-        okText="Publish"
-      >
-        <p>Contenu du modal Shopify</p>
-      </Modal>
+      <PublishModal
+        isOpen={publishModalOpen}               // on utilise notre state local
+        onClose={() => setPublishModalOpen(false)}
+        shopifyDomain={shopifyDomain}
+        setShopifyDomain={setShopifyDomain}
+        shopifyToken={shopifyToken}
+        setShopifyToken={setShopifyToken}
+        title={title}
+        content={content}
+      />
 
       {/* Modal Technical Audit => on y affiche les recommandations & le bouton "Apply" */}
       <Modal
@@ -762,13 +783,26 @@ export default function Step1(props: Step1Props) {
         {techAuditRecommendations.length === 0 ? (
           <p>No recommendations found.</p>
         ) : (
-          <ul>
-            {techAuditRecommendations.map((rec, idx) => (
-              <li key={idx}>
-                <strong>{rec.priority}</strong> — {rec.issue} <br />
-                <em>Suggestion:</em> {rec.recommendation}
-              </li>
-            ))}
+          <ul style={{ listStyleType: 'none', padding: 0 }}>
+            {techAuditRecommendations.map((rec, idx) => {
+              // Détermine la couleur en fonction de la priorité
+              const color = getPriorityColor(rec.priority);
+              return (
+                <li key={idx} style={{ marginBottom: '1rem' }}>
+                  <div>
+                    {/* Tag coloré */}
+                    <Tag color={color} style={{ fontWeight: 'bold' }}>
+                      {rec.priority}
+                    </Tag>
+                    {/* Titre du problème */}
+                    <span style={{ marginLeft: 6 }}>{rec.issue}</span>
+                  </div>
+                  <div style={{ marginLeft: 32, marginTop: 4 }}>
+                    <em>Suggestion:</em> {rec.recommendation}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </Modal>

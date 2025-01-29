@@ -57,16 +57,7 @@ export default function DomainAnalysisReport({
       }}
       bordered={false}
     >
-      <p
-        style={{
-          fontWeight: 600,
-          marginBottom: 16,
-          textAlign: 'center',
-          fontSize: '1.25rem',
-        }}
-      >
-        SEO Score for <span style={{ color: '#2563EB' }}>{domain}</span>
-      </p>
+
 
       <div
         style={{
@@ -75,18 +66,7 @@ export default function DomainAnalysisReport({
           padding: 12,
         }}
       >
-        <p style={{ margin: '0 0 8px 0' }}>
-          <strong>Score (out of 100):</strong>{' '}
-          {analysisData.scoreNumeric ?? 0}
-        </p>
-        <Progress
-          percent={analysisData.scoreNumeric ?? 0}
-          status="active"
-          strokeColor={{
-            '0%': '#34d399',
-            '100%': '#059669',
-          }}
-        />
+
 
         {/* Monthly Traffic Just Under the Score */}
         <p style={{ marginTop: 12 }}>
