@@ -8,7 +8,7 @@ import {
 const { TextArea } = Input;
 
 type Step1Props = {
-  // --- Tous les props que tu as déjà, par ex:
+  // --- Props existants
   loading: boolean;
   step: number;
   setStep: (s: number) => void;
@@ -49,7 +49,7 @@ type Step1Props = {
   collapseActiveKeys: string[];
   setCollapseActiveKeys: (keys: string[]) => void;
 
-  // === Handlers existants (on va les remplacer pour appeler le back) ===
+  // --- Handlers non utilisés maintenant (remplacés par fetch)
   handleRefineContent: () => void;
   handleInsertCTAs: () => void;
   handleChangeImageCount: (val: number) => void;
@@ -60,7 +60,7 @@ type Step1Props = {
   handleClickPublish: () => void;
   handleDiscard: () => void;
 
-  // === Modal Publish ===
+  // --- Modal Publish
   isPublishModalOpen: boolean;
   shopifyDomain: string;
   setShopifyDomain: (d: string) => void;
@@ -92,7 +92,7 @@ export default function Step1(props: Step1Props) {
     setShopifyDomain,
     shopifyToken,
     setShopifyToken,
-    // On va remplacer ces handlers par des versions qui appellent le backend
+    // anciens handlers qu'on remplace
     handleRefineContent: _oldHandleRefineContent,
     handleInsertCTAs: _oldHandleInsertCTAs,
     handleChangeImageCount: _oldHandleChangeImageCount,
@@ -104,6 +104,15 @@ export default function Step1(props: Step1Props) {
     handleDiscard: _oldHandleDiscard
   } = props;
 
+  // État local pour indiquer quelle action est en cours ("refine", "cta", "images", etc.)
+  // Ainsi, on peut afficher un spinner sur le bouton correspondant.
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+
+  // === States pour le Technical Audit
+  const [techAuditModalOpen, setTechAuditModalOpen] = useState(false);
+  const [techAuditRecommendations, setTechAuditRecommendations] = useState<any[]>([]);
+  const [techAuditOriginalContent, setTechAuditOriginalContent] = useState<string>("");
+
   // ================================
   // APPELS AU BACKEND (fetch)
   // ================================
@@ -113,6 +122,7 @@ export default function Step1(props: Step1Props) {
       return;
     }
     try {
+      setLoadingAction("refine");
       const resp = await fetch("http://localhost:8000/refineContent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,11 +144,14 @@ export default function Step1(props: Step1Props) {
     } catch (e) {
       console.error(e);
       message.error("Impossible de raffiner le contenu.");
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handleInsertCTAs = async () => {
     try {
+      setLoadingAction("cta");
       const resp = await fetch("http://localhost:8000/insertCTAs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -163,11 +176,14 @@ export default function Step1(props: Step1Props) {
     } catch (e) {
       console.error(e);
       message.error("Impossible d'insérer le(s) CTA(s).");
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handleApplyImages = async () => {
     try {
+      setLoadingAction("images");
       // On construit un tableau simple de strings (urlOrPrompt)
       const arrOfImages = images.map((imgObj) => imgObj.urlOrPrompt);
 
@@ -194,6 +210,8 @@ export default function Step1(props: Step1Props) {
     } catch (e) {
       console.error(e);
       message.error("Impossible d'insérer les images.");
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -203,6 +221,7 @@ export default function Step1(props: Step1Props) {
       return;
     }
     try {
+      setLoadingAction("customAsset");
       const resp = await fetch("http://localhost:8000/insertCustomAsset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -222,11 +241,14 @@ export default function Step1(props: Step1Props) {
     } catch (e) {
       console.error(e);
       message.error("Impossible d'insérer l'asset.");
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handleExternalLink = async () => {
     try {
+      setLoadingAction("externalLink");
       const resp = await fetch("http://localhost:8000/externalLinkBuilding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -245,6 +267,8 @@ export default function Step1(props: Step1Props) {
     } catch (e) {
       console.error(e);
       message.error("Impossible d'insérer des liens externes.");
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -256,8 +280,7 @@ export default function Step1(props: Step1Props) {
   // Handler pour Publish => /publishShopify
   const handleClickPublish = async () => {
     try {
-      // Ouvre un modal ? ou publie directement
-      // Ex. on fait un simple fetch:
+      setLoadingAction("publish");
       const resp = await fetch("http://localhost:8000/publishShopify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -266,7 +289,6 @@ export default function Step1(props: Step1Props) {
           store: shopifyDomain,
           title,
           content,
-          // etc. si besoin
           tags: [],
           published: true
         }),
@@ -283,14 +305,76 @@ export default function Step1(props: Step1Props) {
     } catch (err) {
       console.error(err);
       message.error("Impossible de publier l'article.");
+    } finally {
+      setLoadingAction(null);
     }
   };
 
   const handleDiscard = () => {
-    // Simplement vider le contenu (ou naviguer ailleurs)
     setContent("");
     setTitle("");
     message.info("Article réinitialisé.");
+  };
+
+  // ================================
+  // TECHNICAL AUDIT
+  // ================================
+  const handleTechnicalAudit = async () => {
+    try {
+      setLoadingAction("technicalAudit");
+      const resp = await fetch("http://localhost:8000/technicalAudit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          article_content: content, // on envoie l'article actuel
+          // éventuellement: store: shopifyDomain, token: shopifyToken, blog_id: ...
+        }),
+      });
+      if (!resp.ok) {
+        throw new Error("Server error on /technicalAudit");
+      }
+      const data = await resp.json();
+      // data.recommendations: tableau de { priority, issue, recommendation }
+      // data.original_content: le HTML initial
+      setTechAuditRecommendations(data.recommendations || []);
+      setTechAuditOriginalContent(data.original_content || "");
+      setTechAuditModalOpen(true);
+    } catch (err) {
+      console.error(err);
+      message.error("Impossible d'effectuer le Technical Audit.");
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleApplyTechnicalAudit = async () => {
+    try {
+      setLoadingAction("applyAudit");
+      const resp = await fetch("http://localhost:8000/applyTechnicalAudit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          original_content: techAuditOriginalContent,
+          audit_report: techAuditRecommendations,
+        }),
+      });
+      if (!resp.ok) {
+        throw new Error("Server error on /applyTechnicalAudit");
+      }
+      const data = await resp.json();
+      if (data.updated_content) {
+        setContent(data.updated_content);
+        message.success("Article corrigé selon l'audit technique !");
+      } else {
+        message.error("Erreur lors de la correction technique");
+      }
+      setTechAuditModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      message.error("Impossible d'appliquer l'audit technique.");
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   // Pour la démo, on laisse un style custom pour l'aperçu
@@ -310,6 +394,7 @@ export default function Step1(props: Step1Props) {
       <div style={{ display: 'flex', minHeight: '100vh' }}>
         {/* SECTION GAUCHE */}
         <div style={{ width: '350px', borderRight: '1px solid #ccc', padding: '1rem' }}>
+          {/* Un spin si l'appli globale est en loading */}
           {loading && <Spin style={{ marginBottom: '1rem' }} />}
 
           <h2>Let's get traffic from this query:</h2>
@@ -328,8 +413,9 @@ export default function Step1(props: Step1Props) {
             block
             style={{ marginBottom: '1rem' }}
             onClick={handleClickPublish}
+            disabled={loadingAction === "publish"}
           >
-            Publish
+            {loadingAction === "publish" ? <><Spin /> Publishing...</> : "Publish"}
           </Button>
 
           <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
@@ -367,8 +453,9 @@ export default function Step1(props: Step1Props) {
                       block
                       style={{ marginTop: '0.5rem' }}
                       onClick={handleRefineContent}
+                      disabled={loadingAction === "refine"}
                     >
-                      Refine Content
+                      {loadingAction === "refine" ? <Spin /> : "Refine Content"}
                     </Button>
                   </>
                 ),
@@ -390,6 +477,7 @@ export default function Step1(props: Step1Props) {
                         }
                       }}
                       style={{ marginBottom: '0.5rem' }}
+                      value={useBrodAiCTAs ? 'brodAi' : 'manual'}
                     >
                       <Radio value="manual">Je choisis moi-même (1–5)</Radio>
                       <Radio value="brodAi">Laisser BrodAI décider</Radio>
@@ -431,8 +519,12 @@ export default function Step1(props: Step1Props) {
                         ))}
                       </div>
                     )}
-                    <Button block onClick={handleInsertCTAs}>
-                      Insert CTA(s)
+                    <Button 
+                      block 
+                      onClick={handleInsertCTAs} 
+                      disabled={loadingAction === "cta"}
+                    >
+                      {loadingAction === "cta" ? <Spin /> : "Insert CTA(s)"}
                     </Button>
                   </>
                 ),
@@ -463,7 +555,6 @@ export default function Step1(props: Step1Props) {
                           onChange={(e) => {
                             const val = parseInt(e.target.value, 10);
                             setImageCount(val);
-                            // On déclenche handleChangeImageCount si besoin
                           }}
                         />
                         {Array.from({ length: imageCount }).map((_, i) => (
@@ -483,14 +574,18 @@ export default function Step1(props: Step1Props) {
                       </div>
                     )}
                     {imageStrategy === 'brodAi' && (
-                      <p>(Exemple) BrodAI choisit des images (placeholder pour l'instant)</p>
+                      <p>(Exemple) BrodAI choisit des images (placeholder)</p>
                     )}
                     {imageStrategy === 'aiGenerated' && (
                       <p>Indiquer le(s) prompt(s) de génération d'image, si besoin</p>
                     )}
 
-                    <Button block onClick={handleApplyImages}>
-                      Insert Images
+                    <Button 
+                      block 
+                      onClick={handleApplyImages} 
+                      disabled={loadingAction === "images"}
+                    >
+                      {loadingAction === "images" ? <Spin /> : "Insert Images"}
                     </Button>
                   </>
                 ),
@@ -509,8 +604,13 @@ export default function Step1(props: Step1Props) {
                       value={customAssetPrompt}
                       onChange={(e) => setCustomAssetPrompt(e.target.value)}
                     />
-                    <Button block style={{ marginTop: '0.5rem' }} onClick={handleCustomAsset}>
-                      Insert Custom Asset
+                    <Button 
+                      block 
+                      style={{ marginTop: '0.5rem' }} 
+                      onClick={handleCustomAsset}
+                      disabled={loadingAction === "customAsset"}
+                    >
+                      {loadingAction === "customAsset" ? <Spin /> : "Insert Custom Asset"}
                     </Button>
                   </>
                 ),
@@ -535,8 +635,12 @@ export default function Step1(props: Step1Props) {
                     >
                       Internal Link Building (soon)
                     </Button>
-                    <Button block onClick={handleExternalLink}>
-                      External Link Building
+                    <Button 
+                      block 
+                      onClick={handleExternalLink}
+                      disabled={loadingAction === "externalLink"}
+                    >
+                      {loadingAction === "externalLink" ? <Spin /> : "External Link Building"}
                     </Button>
                   </>
                 ),
@@ -545,7 +649,15 @@ export default function Step1(props: Step1Props) {
                 key: 'tech',
                 label: 'Technical Audit of HTML Code 🏗️',
                 children: (
-                  <p>(Coming soon) We'll check your HTML tags, headings, microdata, etc.</p>
+                  <>
+                    <Button
+                      block
+                      onClick={handleTechnicalAudit}
+                      disabled={loadingAction === "technicalAudit"}
+                    >
+                      {loadingAction === "technicalAudit" ? <Spin /> : "Run Technical Audit"}
+                    </Button>
+                  </>
                 ),
               },
             ]}
@@ -626,6 +738,39 @@ export default function Step1(props: Step1Props) {
         okText="Publish"
       >
         <p>Contenu du modal Shopify</p>
+      </Modal>
+
+      {/* Modal Technical Audit => on y affiche les recommandations & le bouton "Apply" */}
+      <Modal
+        title="Technical Audit Report"
+        open={techAuditModalOpen}
+        onCancel={() => setTechAuditModalOpen(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setTechAuditModalOpen(false)}>
+            Cancel
+          </Button>,
+          <Button 
+            key="apply" 
+            type="primary" 
+            onClick={handleApplyTechnicalAudit}
+            disabled={loadingAction === "applyAudit"}
+          >
+            {loadingAction === "applyAudit" ? <Spin /> : "Apply Changes"}
+          </Button>
+        ]}
+      >
+        {techAuditRecommendations.length === 0 ? (
+          <p>No recommendations found.</p>
+        ) : (
+          <ul>
+            {techAuditRecommendations.map((rec, idx) => (
+              <li key={idx}>
+                <strong>{rec.priority}</strong> — {rec.issue} <br />
+                <em>Suggestion:</em> {rec.recommendation}
+              </li>
+            ))}
+          </ul>
+        )}
       </Modal>
     </>
   );

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, { useState } from 'react';
 import { Modal, Input, message, notification } from 'antd';
@@ -12,6 +12,9 @@ type PublishModalProps = {
   setShopifyToken: (val: string) => void;
   title: string;
   content: string;
+  // Si tu veux que le user puisse choisir un blogId, tu peux aussi l'ajouter 
+  // blogId: string;
+  // setBlogId: (val: string) => void;
 };
 
 export default function PublishModal({
@@ -56,7 +59,7 @@ export default function PublishModal({
         body: JSON.stringify({
           token: shopifyToken,
           store: shopifyDomain,
-          blogId: 'gid://shopify/Blog/114693013829',
+          blogId: 'gid://shopify/Blog/114693013829', // ou un autre si besoin
           title,
           content,
           tags: [],
@@ -83,7 +86,7 @@ export default function PublishModal({
       console.log('[PublishModal] Response JSON:', data);
 
       if (data.success) {
-        message.success(`Article published! ID: ${data.article?.id || 'unknown'}`);
+        message.success(`Article published!`);
         notification.info({
           message: 'Article Published',
           description: 'Check your Shopify admin to see the new article.',

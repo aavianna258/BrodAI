@@ -16,6 +16,9 @@ from src.packages.utils.web_scraper import extract_website_info
 
 from dotenv import load_dotenv
 import os
+import json
+import re 
+
 
 load_dotenv()
 
@@ -578,7 +581,7 @@ class ApplyTechnicalAuditResponse(BaseModel):
     updated_content: str
 
 
-@router.post("/technicalAudit", response_model=TechnicalAuditResponse)
+@app.post("/technicalAudit", response_model=TechnicalAuditResponse)
 def technical_audit(payload: TechnicalAuditRequest):
     """
     1) Récupère le HTML de l'article (depuis Shopify ou depuis le payload).
@@ -665,7 +668,7 @@ def technical_audit(payload: TechnicalAuditRequest):
     )
 
 
-@router.post("/applyTechnicalAudit", response_model=ApplyTechnicalAuditResponse)
+@app.post("/applyTechnicalAudit", response_model=ApplyTechnicalAuditResponse)
 def apply_technical_audit(payload: ApplyTechnicalAuditRequest):
     """
     Reçoit :
