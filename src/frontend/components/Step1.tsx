@@ -1,15 +1,14 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React, { useState } from "react";
 import {
   Button, Input, Select, Spin, message, Radio, Collapse, Modal
-} from 'antd';
-
+} from "antd";
 
 const { TextArea } = Input;
 
 type Step1Props = {
-  // === States ===
+  // --- Tous les props que tu as déjà, par ex:
   loading: boolean;
   step: number;
   setStep: (s: number) => void;
@@ -33,8 +32,8 @@ type Step1Props = {
   ctaValues: string[];
   setCtaValues: (vals: string[]) => void;
 
-  imageStrategy: 'ownURL' | 'brodAi' | 'aiGenerated';
-  setImageStrategy: (val: 'ownURL' | 'brodAi' | 'aiGenerated') => void;
+  imageStrategy: "ownURL" | "brodAi" | "aiGenerated";
+  setImageStrategy: (val: "ownURL" | "brodAi" | "aiGenerated") => void;
   imageCount: number;
   setImageCount: (n: number) => void;
   images: { urlOrPrompt: string }[];
@@ -50,7 +49,7 @@ type Step1Props = {
   collapseActiveKeys: string[];
   setCollapseActiveKeys: (keys: string[]) => void;
 
-  // === Handlers ===
+  // === Handlers existants (on va les remplacer pour appeler le back) ===
   handleRefineContent: () => void;
   handleInsertCTAs: () => void;
   handleChangeImageCount: (val: number) => void;
@@ -88,32 +87,220 @@ export default function Step1(props: Step1Props) {
     refinePrompt, setRefinePrompt,
     siteUrl, setSiteUrl,
     collapseActiveKeys, setCollapseActiveKeys,
-    handleRefineContent,
-    handleInsertCTAs,
-    handleChangeImageCount,
-    handleApplyImages,
-    handleCustomAsset,
-    handleInternalLink,
-    handleExternalLink,
-    handleClickPublish,
-    handleDiscard,
     isPublishModalOpen,
     shopifyDomain,
     setShopifyDomain,
     shopifyToken,
     setShopifyToken,
+    // On va remplacer ces handlers par des versions qui appellent le backend
+    handleRefineContent: _oldHandleRefineContent,
+    handleInsertCTAs: _oldHandleInsertCTAs,
+    handleChangeImageCount: _oldHandleChangeImageCount,
+    handleApplyImages: _oldHandleApplyImages,
+    handleCustomAsset: _oldHandleCustomAsset,
+    handleInternalLink: _oldHandleInternalLink,
+    handleExternalLink: _oldHandleExternalLink,
+    handleClickPublish: _oldHandleClickPublish,
+    handleDiscard: _oldHandleDiscard
   } = props;
 
+  // ================================
+  // APPELS AU BACKEND (fetch)
+  // ================================
+  const handleRefineContent = async () => {
+    if (!refinePrompt) {
+      message.warning("Veuillez décrire la modification souhaitée.");
+      return;
+    }
+    try {
+      const resp = await fetch("http://localhost:8000/refineContent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          refine_instruction: refinePrompt,
+        }),
+      });
+      if (!resp.ok) {
+        throw new Error("Server error refining content");
+      }
+      const data = await resp.json();
+      if (data.updated_content) {
+        setContent(data.updated_content);
+        message.success("Contenu raffiné !");
+      } else {
+        message.error("Erreur lors du raffinage du contenu");
+      }
+    } catch (e) {
+      console.error(e);
+      message.error("Impossible de raffiner le contenu.");
+    }
+  };
+
+  const handleInsertCTAs = async () => {
+    try {
+      const resp = await fetch("http://localhost:8000/insertCTAs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          useBrodAiCTAs,
+          wantsCTA,
+          ctaCount,
+          ctaValues
+        }),
+      });
+      if (!resp.ok) {
+        throw new Error("Server error on /insertCTAs");
+      }
+      const data = await resp.json();
+      if (data.updated_content) {
+        setContent(data.updated_content);
+        message.success("CTA(s) inséré(s) !");
+      } else {
+        message.error("Erreur lors de l'insertion des CTA");
+      }
+    } catch (e) {
+      console.error(e);
+      message.error("Impossible d'insérer le(s) CTA(s).");
+    }
+  };
+
+  const handleApplyImages = async () => {
+    try {
+      // On construit un tableau simple de strings (urlOrPrompt)
+      const arrOfImages = images.map((imgObj) => imgObj.urlOrPrompt);
+
+      const resp = await fetch("http://localhost:8000/applyImages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          imageStrategy,
+          imageCount,
+          images: arrOfImages,
+        }),
+      });
+      if (!resp.ok) {
+        throw new Error("Server error on /applyImages");
+      }
+      const data = await resp.json();
+      if (data.updated_content) {
+        setContent(data.updated_content);
+        message.success("Images insérées !");
+      } else {
+        message.error("Erreur lors de l'insertion des images");
+      }
+    } catch (e) {
+      console.error(e);
+      message.error("Impossible d'insérer les images.");
+    }
+  };
+
+  const handleCustomAsset = async () => {
+    if (!customAssetPrompt) {
+      message.warning("Décrivez l'asset à insérer.");
+      return;
+    }
+    try {
+      const resp = await fetch("http://localhost:8000/insertCustomAsset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: customAssetPrompt }),
+      });
+      if (!resp.ok) {
+        throw new Error("Server error on /insertCustomAsset");
+      }
+      const data = await resp.json();
+      if (data.asset_html) {
+        // On concatène au contenu
+        setContent((prev) => prev + "\n" + data.asset_html);
+        message.success("Asset inséré !");
+      } else {
+        message.error("Erreur lors de l'insertion de l'asset");
+      }
+    } catch (e) {
+      console.error(e);
+      message.error("Impossible d'insérer l'asset.");
+    }
+  };
+
+  const handleExternalLink = async () => {
+    try {
+      const resp = await fetch("http://localhost:8000/externalLinkBuilding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!resp.ok) {
+        throw new Error("Server error on /externalLinkBuilding");
+      }
+      const data = await resp.json();
+      if (data.updated_content) {
+        setContent(data.updated_content);
+        message.success("Liens externes insérés !");
+      } else {
+        message.error("Erreur lors de l'ajout des liens externes.");
+      }
+    } catch (e) {
+      console.error(e);
+      message.error("Impossible d'insérer des liens externes.");
+    }
+  };
+
+  // Ex. handleInternalLink (si tu crées /internalLinkBuilding)
+  const handleInternalLink = () => {
+    message.info("Fonction en cours de développement !");
+  };
+
+  // Handler pour Publish => /publishShopify
+  const handleClickPublish = async () => {
+    try {
+      // Ouvre un modal ? ou publie directement
+      // Ex. on fait un simple fetch:
+      const resp = await fetch("http://localhost:8000/publishShopify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: shopifyToken,
+          store: shopifyDomain,
+          title,
+          content,
+          // etc. si besoin
+          tags: [],
+          published: true
+        }),
+      });
+      if (!resp.ok) {
+        throw new Error("Server error on /publishShopify");
+      }
+      const data = await resp.json();
+      if (data.success) {
+        message.success("Article publié sur Shopify !");
+      } else {
+        message.error("Erreur lors de la publication Shopify");
+      }
+    } catch (err) {
+      console.error(err);
+      message.error("Impossible de publier l'article.");
+    }
+  };
+
+  const handleDiscard = () => {
+    // Simplement vider le contenu (ou naviguer ailleurs)
+    setContent("");
+    setTitle("");
+    message.info("Article réinitialisé.");
+  };
+
+  // Pour la démo, on laisse un style custom pour l'aperçu
   const customPreviewCss = `
     h1 { font-size: 1.8rem; margin: 1rem 0; }
     h2 { font-size: 1.4rem; margin: 0.75rem 0; }
     p, li { font-size: 1rem; margin: 0.5rem 0; }
     .cta-button { background-color: #f0c040; padding: 0.5rem; display: inline-block; margin: 0.5rem 0; }
     img { max-width: 100%; height: auto; margin: 0.5rem 0; }
-    .highlightKeyword {
-      color: #e91e63;
-      font-weight: bold;
-    }
+    .highlightKeyword { color: #e91e63; font-weight: bold; }
   `;
 
   return (
@@ -130,23 +317,12 @@ export default function Step1(props: Step1Props) {
             Target keyword: <span className="highlightKeyword">{keyword}</span> <br/>
             Market: <span style={{ color: '#2196f3' }}>France</span>
           </p>
-          {/* 
-          <Button block style={{ marginBottom: '0.5rem' }} onClick={() => {
-            message.info("Show metrics: volume, difficulty, BrodAI score, intent... (coming soon)");
-          }}>
-            Show Metrics
-          </Button>
-          <Button block style={{ marginBottom: '1rem' }} onClick={() => {
-            message.info("Show competition: who is ranking, type of pages... (coming soon)");
-          }}>
-            Show Competition
-          </Button> */}
 
           <p style={{ marginBottom: '1rem', fontSize: '0.95rem' }}>
-            BrodAI analyzed all these informations to help you rank on the first page!
+            BrodAI analyzed data to help you rank on the first page!
           </p>
 
-          {/* Bouton Publish => ouvre la modal */}
+          {/* Bouton Publish => ouvre la modal / ou appelle handleClickPublish */}
           <Button
             type="primary"
             block
@@ -157,7 +333,7 @@ export default function Step1(props: Step1Props) {
           </Button>
 
           <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-            BrodAI handles everything for you, but you can still customize or refine any part below:
+            BrodAI handles everything, but you can refine below:
           </p>
           <Button
             style={{ marginBottom: '1rem' }}
@@ -179,7 +355,7 @@ export default function Step1(props: Step1Props) {
                 children: (
                   <>
                     <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                      Didn’t like part of the text? Describe what to change:
+                      Décrivez ce que vous voulez changer:
                     </p>
                     <TextArea
                       rows={2}
@@ -215,13 +391,13 @@ export default function Step1(props: Step1Props) {
                       }}
                       style={{ marginBottom: '0.5rem' }}
                     >
-                      <Radio value="manual">I choose how many CTAs (1–5)</Radio>
-                      <Radio value="brodAi">Let BrodAI figure them out</Radio>
+                      <Radio value="manual">Je choisis moi-même (1–5)</Radio>
+                      <Radio value="brodAi">Laisser BrodAI décider</Radio>
                     </Radio.Group>
 
                     {wantsCTA && (
                       <div style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
-                        <p>Number of CTAs (1 to 5)</p>
+                        <p>Nombre de CTAs (1 à 5)</p>
                         <Input
                           type="number"
                           min={1}
@@ -271,14 +447,14 @@ export default function Step1(props: Step1Props) {
                       value={imageStrategy}
                       style={{ marginBottom: '0.5rem' }}
                     >
-                      <Radio value="ownURL">Insert my own image URLs</Radio>
+                      <Radio value="ownURL">Mes propres URLs</Radio>
                       <Radio value="brodAi">BrodAI picks images</Radio>
-                      <Radio value="aiGenerated">Generate images with AI</Radio>
+                      <Radio value="aiGenerated">Générer avec l'IA</Radio>
                     </Radio.Group>
 
                     {imageStrategy === 'ownURL' && (
                       <div style={{ marginLeft: '0.5rem', marginBottom: '1rem' }}>
-                        <p>How many images? (1 to 5)</p>
+                        <p>Combien d'images? (1 to 5)</p>
                         <Input
                           type="number"
                           min={1}
@@ -286,7 +462,8 @@ export default function Step1(props: Step1Props) {
                           value={imageCount}
                           onChange={(e) => {
                             const val = parseInt(e.target.value, 10);
-                            handleChangeImageCount(val);
+                            setImageCount(val);
+                            // On déclenche handleChangeImageCount si besoin
                           }}
                         />
                         {Array.from({ length: imageCount }).map((_, i) => (
@@ -297,7 +474,7 @@ export default function Step1(props: Step1Props) {
                               value={images[i]?.urlOrPrompt || ''}
                               onChange={(ev) => {
                                 const arr = [...images];
-                                arr[i].urlOrPrompt = ev.target.value;
+                                arr[i] = { urlOrPrompt: ev.target.value };
                                 setImages(arr);
                               }}
                             />
@@ -306,10 +483,10 @@ export default function Step1(props: Step1Props) {
                       </div>
                     )}
                     {imageStrategy === 'brodAi' && (
-                      <p>(Coming soon) BrodAI picks images for you</p>
+                      <p>(Exemple) BrodAI choisit des images (placeholder pour l'instant)</p>
                     )}
                     {imageStrategy === 'aiGenerated' && (
-                      <p>(Coming soon) AI-generated images from your prompts</p>
+                      <p>Indiquer le(s) prompt(s) de génération d'image, si besoin</p>
                     )}
 
                     <Button block onClick={handleApplyImages}>
@@ -324,11 +501,11 @@ export default function Step1(props: Step1Props) {
                 children: (
                   <>
                     <p style={{ fontStyle: 'italic', fontSize: '0.9rem' }}>
-                      Boost user engagement with simulators, comparison tables, quizzes...
+                      Insérer un simulateur, un quiz...
                     </p>
                     <TextArea
                       rows={2}
-                      placeholder="e.g. 'Insert a price simulator for e-commerce'"
+                      placeholder="e.g. 'Insérer un simulateur de prix e-commerce'"
                       value={customAssetPrompt}
                       onChange={(e) => setCustomAssetPrompt(e.target.value)}
                     />
@@ -396,8 +573,6 @@ export default function Step1(props: Step1Props) {
             </div>
           )}
 
-          <style>{customPreviewCss}</style>
-
           {/* Titre */}
           <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {!editTitleMode ? (
@@ -441,7 +616,8 @@ export default function Step1(props: Step1Props) {
         </div>
       </div>
 
-      {/* Modal Publish => on l'extrait en composant, mais on peut aussi le laisser ici */}
+      {/* Modal Publish => si tu veux un modal "officiel", 
+          ici on l'a laissé vide pour l'exemple. */}
       <Modal
         title="Publish to Shopify"
         open={isPublishModalOpen}
@@ -449,7 +625,7 @@ export default function Step1(props: Step1Props) {
         onCancel={() => {}}
         okText="Publish"
       >
-        {/* On laisse vide, ou on retire ce code pour le mettre dans PublishModal.tsx */}
+        <p>Contenu du modal Shopify</p>
       </Modal>
     </>
   );

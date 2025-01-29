@@ -436,4 +436,112 @@ def refine_content(payload: RefineContentRequest):
     }
 
 
+########################################
+# NOUVELLE ROUTE: /insertCTAs
+########################################
+class InsertCTAsRequest(BaseModel):
+    content: str
+    useBrodAiCTAs: bool
+    wantsCTA: bool
+    ctaCount: int
+    ctaValues: List[str]
 
+@app.post("/insertCTAs")
+def insert_ctas(payload: InsertCTAsRequest):
+    """
+    Insertion de CTA dans le contenu HTML.
+    - Si useBrodAiCTAs = True => on laisse GPT générer le(s) CTA
+    - Sinon on utilise la liste ctaValues pour injecter manuellement X CTA.
+    """
+    content = payload.content.strip()
+    cta_count = payload.ctaCount
+    if not content:
+        raise HTTPException(status_code=400, detail="Missing content")
+
+    # Cas 1: On laisse GPT "deviner" la/les CTA(s)
+    if payload.useBrodAiCTAs:
+        openai_client = OpenAIClient()
+        prompt = (
+            f"Voici un article HTML:\n{content}\n\n"
+            f"Insère {cta_count} CTA (boutons) en français, "
+            f"où c'est pertinent, en utilisant une balise <div class='cta-button'>"
+            f" ou similaire. Ne renvoie que le HTML final.\n"
+        )
+        try:
+            updated_content = openai_client.call_api(
+                api_type="text",
+                model="o1-mini",
+                prompt=prompt,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # Cas 2: On a un array ctaValues => On injecte ces CTA manuellement
+    else:
+        # On peut, par exemple, ajouter chaque CTA à la fin d'un paragraphe,
+        # ou tout simplement coller en bas de l'article. Exemple simplifié:
+        updated_content = content
+        for cta_text in payload.ctaValues:
+            # Ex. on insère un petit HTML
+            updated_content += f"\n<div class='cta-button'>{cta_text}</div>\n"
+
+    return {"updated_content": updated_content}
+
+
+########################################
+# NOUVELLE ROUTE: /applyImages
+########################################
+class ApplyImagesRequest(BaseModel):
+    content: str
+    imageStrategy: str  # 'ownURL' | 'brodAi' | 'aiGenerated'
+    imageCount: int
+    images: List[str]  # contiendra soit URL ou prompt
+
+@app.post("/applyImages")
+def apply_images(payload: ApplyImagesRequest):
+    """
+    Insère des images dans l'article HTML selon la stratégie:
+    - ownURL => l'utilisateur fournit directement l'URL
+    - brodAi => (ex: on laisse GPT choisir des images, si tu implémente un micro-service d'images)
+    - aiGenerated => on appelle DALL-E/OpenAI image creation
+    """
+    content = payload.content.strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="No content provided")
+
+    if payload.imageStrategy == "ownURL":
+        # On insère les URLs fournies directement dans le HTML
+        updated_content = content
+        for url in payload.images:
+            updated_content += f"\n<img src='{url}' alt='Image' />\n"
+
+    elif payload.imageStrategy == "brodAi":
+        # (Exemple à adapter) => simple placeholder
+        # On peut imaginer que tu as un service qui renvoie des URLs d'images
+        # en fonction du sujet. Ici on fait juste un placeholder.
+        updated_content = content
+        for i in range(payload.imageCount):
+            updated_content += f"\n<img src='https://via.placeholder.com/600?text=BrodAI+Image#{i+1}' alt='BrodAI image' />\n"
+
+    elif payload.imageStrategy == "aiGenerated":
+        # Ex: on appelle OpenAI DALL-E / Stable Diffusion, etc.
+        # On suppose que "images" contient des prompts, on génère des URLs.
+        # NB: la classe OpenAIClient devrait avoir une méthode pour générer des images (à implémenter).
+        openai_client = OpenAIClient()
+        updated_content = content
+        for prompt in payload.images:
+            try:
+                image_url = openai_client.call_api(
+                    api_type="images",
+                    model="dall-e",
+                    prompt=prompt
+                )
+                # On suppose que call_api(..., api_type="images") renvoie directement un url
+                updated_content += f"\n<img src='{image_url}' alt='{prompt}' />\n"
+            except Exception as e:
+                # En cas d'erreur, on insère un fallback
+                updated_content += f"\n<img src='https://via.placeholder.com/600?text=Error+Image' alt='Error' />\n"
+    else:
+        updated_content = content
+
+    return {"updated_content": updated_content}
