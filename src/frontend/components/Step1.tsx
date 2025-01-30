@@ -275,7 +275,7 @@ const handleApplyImages = async () => {
       const data = await resp.json();
       if (data.asset_html) {
         // On concatène l'asset HTML au contenu existant
-        setContent((prev) => prev + "\n" + data.asset_html);
+        setContent(content + data.asset_html); // attention
         message.success("Asset inséré !");
       } else {
         message.error("Erreur lors de l'insertion de l'asset");
@@ -391,9 +391,6 @@ const handleApplyImages = async () => {
       <div style={{ display: 'flex', minHeight: '100vh' }}>
         {/* SECTION GAUCHE */}
         <div style={{ width: '350px', borderRight: '1px solid #ccc', padding: '1rem' }}>
-          {/* Un spin si l'appli globale est en loading */}
-          {loading && <Spin style={{ marginBottom: '1rem' }} />}
-
           <h2>Let's get traffic from this query:</h2>
           <p>
             Target keyword: <span className="highlightKeyword">{keyword}</span> <br/>
@@ -438,7 +435,7 @@ const handleApplyImages = async () => {
                 children: (
                   <>
                     <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                      Décrivez ce que vous voulez changer:
+                      Describe what you want to change in the content:
                     </p>
                     <TextArea
                       rows={2}
@@ -464,19 +461,19 @@ const handleApplyImages = async () => {
                   <>
                     <Radio.Group
                       onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === 'brodAi') {
-                          setUseBrodAiCTAs(true);
-                          setWantsCTA(false);
-                        } else {
-                          setUseBrodAiCTAs(false);
-                          setWantsCTA(true);
-                        }
+                      const val = e.target.value;
+                      if (val === 'brodAi') {
+                        setUseBrodAiCTAs(true);
+                        setWantsCTA(false);
+                      } else {
+                        setUseBrodAiCTAs(false);
+                        setWantsCTA(true);
+                      }
                       }}
                       style={{ marginBottom: '0.5rem' }}
-                      value={useBrodAiCTAs ? 'brodAi' : 'manual'}
+                      value={'brodAi'} // Pre-select BrodAI option by default
                     >
-                      <Radio value="manual">Je choisis moi-même (1–5)</Radio>
+                      <Radio value="manual" disabled={true}>Je choisis moi-même (1–5)</Radio>
                       <Radio value="brodAi">Laisser BrodAI décider</Radio>
                     </Radio.Group>
 
@@ -591,8 +588,8 @@ const handleApplyImages = async () => {
                 label: 'Interactive Assets 🪄',
                 children: (
                   <>
-                    <p style={{ fontStyle: 'italic', fontSize: '0.9rem' }}>
-                      Insérer un simulateur, un quiz...
+                    <p style={{ fontSize: '0.9rem' }}>
+                      Describe the asset you want to insert:
                     </p>
                     <TextArea
                       rows={2}
@@ -667,6 +664,7 @@ const handleApplyImages = async () => {
           )}
 
           {/* Titre */}
+          {!loading && (
           <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {!editTitleMode ? (
               <>
@@ -684,6 +682,7 @@ const handleApplyImages = async () => {
               </>
             )}
           </div>
+          )}
 
           {/* Preview ou Editor */}
           {!showEditor ? (

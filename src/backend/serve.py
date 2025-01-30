@@ -272,9 +272,10 @@ def insert_custom_asset(payload: CustomAssetRequest):
     # On demande explicitement : "retourne moi UNIQUEMENT du code HTML. Pas de texte supplémentaire."
     full_prompt = (
         f"Tu es un assistant qui génère du code HTML pour un asset interactif.\n"
-        f"Voici la demande : {prompt}.\n"
+        f"Voici la description de l'asset : {prompt}.\n"    
         f"Voici le contenu de l'article : {article_content}\n"
-        f"Retourne uniquement du code HTML, sans aucune explication.\n"
+        f"Insére cet asset dans le contenu de l'article de façon logique.\n"
+        f"Retourne uniquement du code HTML du résultat, sans aucune explication.\n"
         f"Dans ce code HTML, mets le tout dans une balise <div>.\n"
     )
 
