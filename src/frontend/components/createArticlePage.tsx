@@ -124,7 +124,7 @@ export default function CreateArticlePage() {
           // Toutes les props nécessaires
           loading={loading}
           step={step}
-          setStep={setStep}
+          setStep={(s: number) => setStep(s as Step)}
           keyword={keyword}
           title={title}
           setTitle={setTitle}
@@ -192,7 +192,7 @@ export default function CreateArticlePage() {
         <Step2
           loading={loading}
           step={step}
-          setStep={setStep}
+          setStep={(s: number) => setStep(s as Step)}
         />
         <PublishModal
           isOpen={isPublishModalOpen}

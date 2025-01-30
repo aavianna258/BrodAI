@@ -11,7 +11,7 @@ export default function HomePage() {
   return (
     <>
       <BrodAIHeroAnalysis />
-      <BrodAIAnalysisSection />
+      {/* <BrodAIAnalysisSection /> */}
       <SEOProcessTimeline />
       <PricingSection />
       <FaqSection />

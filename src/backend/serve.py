@@ -214,6 +214,7 @@ def generate_article(payload: KeywordRequest):
     prompt = (
         f"Tu es un expert SEO. "
         f"Rédige un court article en ciblant le mot-clé : {keyword}. "
+        f"La langue du titre et de l'article doit correspondre à la langue du mot-clé."
         f"L'article doit respecter les recommendations E-E-A-T de google et doit etre riche avec minimum 3000 mots."
         f"Il doit traiter tout les questions et les angles en relation avec le mot-clé :"
         f"renvoie juste le contenu de l'article en code html dans une balise <div> sans markdown ou texte supplémentaire"
@@ -231,7 +232,7 @@ def generate_article(payload: KeywordRequest):
 
     # 4) Générer un titre succinct (option 1 : prompt séparé, option 2 : dans le même prompt)
     #    Ici, on fait un prompt séparé pour illustrer.
-    title_prompt = f"Propose un titre SEO optimisé en français pour ce keyword : {keyword}. Renvoie que le titre sans texte ou explication supplémentaire et pas de formatage et pas de markdown juste le text brut"
+    title_prompt = f"Propose un titre SEO optimisé pour ce keyword : {keyword}. Renvoie que le titre sans texte ou explication supplémentaire et pas de formatage et pas de markdown juste le text brut"
     article_title = openai_client.call_api(
         api_type="text",
         model="o1-mini",
@@ -331,6 +332,9 @@ def external_link_building(payload: ExternalLinkBuildingRequest):
         f"Inclus des liens externes vers des sites d'autorité (en français). "
         f"N'ajoute pas d'explications. Retourne le contenu final HTML "
         f"avec les balises <a href='...'></a> insérées où c'est pertinent.\n"
+        f"Renvoie juste le contenu de l'article en code html dans une balise <div> sans markdown ou texte supplémentaire"
+        f"Ne rajoute pas d'explications, seulement le contenu final."
+        f"Aussi, formattes les liens comme un hyperlink classique: souslignés et en bleu."
     )
 
     try:
@@ -1033,6 +1037,6 @@ def demo_kwd_research_from_domain(site_url: str) -> Dict[str, List[BrodAIKeyword
         top_keywords = researcher.get_top_keywords()
 
         return {"target_kw_report": top_keywords}
-    
+
     except Exception as e:
         return {"status": 500, "data": {"error": str(e)}}
