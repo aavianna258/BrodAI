@@ -117,7 +117,7 @@ export default function DemoAgentPage() {
             }}
           >
             <TopicsDisplay domain={domain} topics={fakeTopics} />
-            <ArticlesCarousel articles={fakeArticles} />
+            {/* <ArticlesCarousel articles={fakeArticles} /> */}
             <CTASection domain={domain} />
           </motion.div>
         )}

@@ -1,18 +1,13 @@
 // app/keyword-research/page.tsx or pages/keyword-research.tsx
-'use client'; // for Next.js 13 with App Router
-
 'use client';
 
-import { useTypewriter, Cursor } from 'react-simple-typewriter';
-
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Row, Col, Input, Button, Spin, message, Table } from 'antd';
 import { motion } from 'framer-motion';
 import { LoadingOutlined } from '@ant-design/icons';
-import { fetchKeywords, fetchDomain, IBrodAIKeyword } from '@/components/keyword-research/KeywordResearchService';
-import { useRouter } from 'next/navigation';
 
-
+import { fetchKeywords, IBrodAIKeyword } from '@/components/keyword-research/KeywordResearchService';
 
 export default function KeywordResearchPage() {
   const [mainKeyword, setMainKeyword] = useState('');
@@ -20,30 +15,28 @@ export default function KeywordResearchPage() {
   const [loading, setLoading] = useState(false);
   const [keywords, setKeywords] = useState<IBrodAIKeyword[]>([]);
 
+  const router = useRouter();
   const spinnerIcon = <LoadingOutlined style={{ fontSize: 28 }} spin />;
 
-
-  const handleSearch = async () => {
+  async function handleSearch() {
     if (!mainKeyword.trim()) {
       message.warning('Please enter a valid domain.');
       return;
     }
     setLoading(true);
     setKeywords([]);
+
     try {
       const data = await fetchKeywords(mainKeyword);
       setKeywords(data);
     } catch (error: any) {
-      message.error(error.message || 'Error fetching domain');
+      message.error(error.message || 'Error fetching keywords');
     } finally {
       setLoading(false);
     }
-  };
-
-  const router = useRouter();
+  }
 
   function handleWriteArticle(keyword: string) {
-    // On peut pousser vers /create-article en passant la query `keyword`
     router.push(`/create-article?keyword=${encodeURIComponent(keyword)}`);
   }
 
@@ -57,16 +50,10 @@ export default function KeywordResearchPage() {
       title: 'Actions',
       key: 'actions',
       render: (text: any, record: IBrodAIKeyword) => (
-        // Exemple avec Link :
-        // <Link href={`/create-article?keyword=${encodeURIComponent(record.keyword)}`}>
-        //   <Button type="primary">Write an article</Button>
-        // </Link>
-  
-        // OU exemple avec un handleWriteArticle :
         <Button type="primary" onClick={() => handleWriteArticle(record.keyword)}>
           Write an article
         </Button>
-      )
+      ),
     },
   ];
 
@@ -75,27 +62,35 @@ export default function KeywordResearchPage() {
       style={{
         padding: '60px 20px',
         textAlign: 'center',
-        minHeight: '70vh', // Reduced to avoid a very tall layout initially
+        minHeight: '70vh',
         background: 'linear-gradient(90deg, #e0ecff 0%, #f0f4ff 100%)',
       }}
     >
+      {/* 1) Title + Intro (from demo_agent’s “HeroSection”-like content) */}
+      <motion.div
+        initial={{ opacity: 0, y: -15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        style={{ marginBottom: '40px' }}
+      >
+        <h1 style={{ fontSize: '2.5rem', color: '#2563EB', fontWeight: 'bold', marginBottom: '16px' }}>
+          Discover Profitable Topics for Your Domain
+        </h1>
+        <p style={{ fontSize: '1.2rem', lineHeight: 1.6, maxWidth: 600, margin: '0 auto' }}>
+          Our AI can analyze your website or domain and uncover fresh, low-competition keyword ideas
+          that help you rank faster. Simply enter your domain below and let’s get started!
+        </p>
+      </motion.div>
+
+      {/* 2) Existing Input + Table Section */}
       <Row justify="center">
         <Col xs={24} sm={20} md={14} lg={12}>
-          <motion.h2
-            initial={{ opacity: 0, y: -15 }}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            style={{
-              fontSize: '2rem',
-              color: '#2563EB',
-              marginBottom: '16px',
-              fontWeight: 'bold',
-            }}
+            style={{ marginBottom: 24 }}
           >
-            Keyword Research from Domain
-          </motion.h2>
-
-          <div style={{ marginBottom: 24 }}>
             <Input
               placeholder="Enter your domain"
               value={mainKeyword}
@@ -105,8 +100,9 @@ export default function KeywordResearchPage() {
             <Button type="primary" onClick={handleSearch}>
               Search
             </Button>
-          </div>
+          </motion.div>
 
+          {/* Loading Spinner */}
           {loading && (
             <motion.div
               initial={{ rotate: 0 }}
@@ -123,6 +119,7 @@ export default function KeywordResearchPage() {
             </motion.div>
           )}
 
+          {/* Keyword Results Table */}
           {!loading && keywords.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -136,7 +133,7 @@ export default function KeywordResearchPage() {
               }}
             >
               <h3 style={{ textAlign: 'center', fontWeight: 600, marginBottom: 16 }}>
-                Top Keywords Related to "{mainKeyword}"
+                Top Keywords Related to &quot;{mainKeyword}&quot;
               </h3>
               <Table
                 columns={columns}
@@ -145,36 +142,39 @@ export default function KeywordResearchPage() {
               />
             </motion.div>
           )}
-
-          {/* Additional section: highlights the power of the Keyword Research Agent & free trial */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            style={{
-              marginTop: 40,
-              padding: '24px',
-              backgroundColor: '#fff',
-              borderRadius: 8,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            }}
-          >
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 'bold', marginBottom: 16 }}>
-              Experience Our Powerful Keyword Research Agent
-            </h2>
-            <p style={{ fontSize: '1rem', lineHeight: 1.6, marginBottom: 24 }}>
-              Our agent analyzes your ideas, phrases, or keywords to instantly find the best
-              keywords that will help you rank on Google's first page. Get keywords with high
-              search volume, strong conversion intent, and very low difficulty.
-              <br />
-              BrodAI is offering a free trial of this tool, with 50 free uses to discover its power.
-            </p>
-            <Button type="primary" size="large">
-              Get Your Free Trial (50 Uses)
-            </Button>
-          </motion.div>
         </Col>
       </Row>
+
+      {/* 3) How It Works (2-step version) — placed AFTER the table/columns */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        style={{
+          margin: '40px auto 0 auto',
+          padding: '24px',
+          maxWidth: '800px',
+          backgroundColor: '#fff',
+          borderRadius: 8,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          textAlign: 'left',
+        }}
+      >
+        <h2 style={{ fontSize: '1.6rem', fontWeight: 'bold', marginBottom: 16 }}>
+          How It Works
+        </h2>
+        <ol style={{ lineHeight: 1.8, paddingLeft: '20px' }}>
+          <li style={{ marginBottom: '12px' }}>
+            <strong>Step 1:</strong> We analyze your domain’s strengths and current SEO signals.
+          </li>
+          <li>
+            <strong>Step 2:</strong> We uncover the top keyword opportunities that offer high traffic
+            but low competition.
+          </li>
+        </ol>
+      </motion.div>
+
+      {/* 4) Removed "Experience Our Powerful Keyword Research Agent" section entirely */}
     </div>
   );
 }
