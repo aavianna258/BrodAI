@@ -4,24 +4,19 @@ from httpx import RequestError
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from requests import RequestException
-#from packages.product_pages.product_page_optimiser import ProductPageOptimiser
+
+# from packages.product_pages.product_page_optimiser import ProductPageOptimiser
 from src.packages.config.brodai_global_classes import BrodAIKeyword
 from src.packages.keyword_research.keyword_research import KeywordResearcher
 from src.packages.bloggers.shopify_blogger import ShopifyBlogger
 from src.packages.utils.openai import OpenAIClient
-from src.packages.utils.misc import extract_json
 from src.packages.utils.web_scraper import extract_website_info
 
 import httpx
 from dotenv import load_dotenv
 import json
-import re 
-import httpx
-from httpx import RequestError
+import re
 from bs4 import BeautifulSoup
-from fastapi import HTTPException
-from pydantic import BaseModel
 
 
 load_dotenv()
@@ -46,9 +41,11 @@ app.add_middleware(
 class AnalysisRequest(BaseModel):
     domain: str
 
+
 class AnalysisResponse(BaseModel):
     status: int
     data: Dict[str, Any]
+
 
 class KeywordRequest(BaseModel):
     main_keyword: str
@@ -66,6 +63,7 @@ class TrafficReport(BaseModel):
     monthly_traffic: int
     top_keywords: List[EvaluatedKeyword]
 
+
 class PublishShopifyRequest(BaseModel):
     token: str
     store: str
@@ -74,6 +72,7 @@ class PublishShopifyRequest(BaseModel):
     content: str
     tags: List[str] = []
     published: bool = True
+
 
 class CreateArticlePayload(BaseModel):
     blogId: Optional[str] = None
@@ -90,7 +89,6 @@ def read_root() -> Dict[str, str]:
     return {"Hello": "World"}
 
 
-
 @app.post("/keyword_research")
 def keyword_research(request: KeywordRequest) -> Dict[str, List[BrodAIKeyword]]:
     main_kw = request.main_keyword
@@ -102,13 +100,14 @@ def keyword_research(request: KeywordRequest) -> Dict[str, List[BrodAIKeyword]]:
     return {"target_kw_report": top_keywords}
 
 
-
 class AnalysisRequest(BaseModel):
     domain: str
+
 
 class AnalysisResponse(BaseModel):
     status: int
     data: Dict[str, Any]
+
 
 @app.post("/analysis")
 def analyze_domain(payload: AnalysisRequest):
@@ -118,7 +117,7 @@ def analyze_domain(payload: AnalysisRequest):
     try:
         # 1) Extract h1/h2, meta_title, meta_description
         scraped_info = extract_website_info(domain)
-        
+
         # 2) Pass domain + scraped_info to the SeoAnalyzer
         analysis_data = analyzer.analyze_domain(domain, scraped_info)
 
@@ -131,35 +130,30 @@ def analyze_domain(payload: AnalysisRequest):
 
     except ValueError as ve:
         # If the site scraping fails or is invalid
-        return AnalysisResponse(
-            status=500,
-            data={"error": f"Scraper error: {str(ve)}"}
-        )
+        return AnalysisResponse(status=500, data={"error": f"Scraper error: {str(ve)}"})
     except Exception as e:
         # General fallback
         return AnalysisResponse(
-            status=500,
-            data={"error": f"Failed to analyze domain: {str(e)}"}
+            status=500, data={"error": f"Failed to analyze domain: {str(e)}"}
         )
 
 
 @app.post("/publishShopify")
 def publish_shopify_article(payload: PublishShopifyRequest):
-
     try:
         # 1) Initialise la classe ShopifyBlogger avec les credentials "dynamiques"
         blogger = ShopifyBlogger()
-        blogger.api_token = payload.token     # on écrase la variable d'env
-        blogger.shop_url = payload.store      # on écrase également la variable d'env
+        blogger.api_token = payload.token  # on écrase la variable d'env
+        blogger.shop_url = payload.store  # on écrase également la variable d'env
 
         # 2) Construire les données de l'article
         article_data = {
             "title": payload.title,
-            "author": "Demo Author",   # ou un auteur que vous gérez autrement
+            "author": "Demo Author",  # ou un auteur que vous gérez autrement
             "body": payload.content,
             "tags": payload.tags,
             "summary": "Ceci est le résumé de l'article de démonstration.",
-            "is_published": payload.published
+            "is_published": payload.published,
         }
 
         # 3) Appeler la méthode create_article
@@ -168,11 +162,13 @@ def publish_shopify_article(payload: PublishShopifyRequest):
         #    - publish = payload.published (pour la publication)
         print(payload.blogId)
         response = blogger.create_article(
-            blog_id = payload.blogId or "gid://shopify/Blog/114693013829",
+            blog_id=payload.blogId or "gid://shopify/Blog/114693013829",
             article=article_data,
-            publish=payload.published
+            publish=payload.published,
         )
-        article_create_data = response["articleCreate"]  # KeyError si la mutation n'a pas abouti
+        article_create_data = response[
+            "articleCreate"
+        ]  # KeyError si la mutation n'a pas abouti
 
         user_errors = article_create_data.get("userErrors", [])
 
@@ -180,7 +176,7 @@ def publish_shopify_article(payload: PublishShopifyRequest):
             # On a des erreurs (ex: permissions, credentials invalides, format incorrect, etc.)
             return {
                 "success": False,
-                "error": user_errors  # renvoyer la liste d'erreurs pour les afficher au front
+                "error": user_errors,  # renvoyer la liste d'erreurs pour les afficher au front
             }
 
         # Sinon, on récupère l'article créé
@@ -189,19 +185,18 @@ def publish_shopify_article(payload: PublishShopifyRequest):
             "success": True,
             "article": {
                 "title": created_article["title"],
-                #"id": created_article["id"],
-                "isPublished": created_article["isPublished"]
-            }
+                # "id": created_article["id"],
+                "isPublished": created_article["isPublished"],
+            },
         }
 
     except Exception as e:
         # En cas d'erreur, on renvoie un statut 500 et un message
-        return {
-            "success": False,
-            "error": str(e)
-        }
-    
-#Article writer -- change this part
+        return {"success": False, "error": str(e)}
+
+
+# Article writer -- change this part
+
 
 @app.post("/generateArticle")
 def generate_article(payload: KeywordRequest):
@@ -244,11 +239,7 @@ def generate_article(payload: KeywordRequest):
     )
 
     # 5) Retourner le titre et le contenu
-    return {
-        "title": article_title,
-        "content": article_content
-    }
-
+    return {"title": article_title, "content": article_content}
 
 
 # ----------------------------------------------------------------------------------------
@@ -256,6 +247,7 @@ def generate_article(payload: KeywordRequest):
 # ----------------------------------------------------------------------------------------
 class CustomAssetRequest(BaseModel):
     prompt: str
+
 
 @app.post("/insertCustomAsset")
 def insert_custom_asset(payload: CustomAssetRequest):
@@ -295,6 +287,7 @@ def insert_custom_asset(payload: CustomAssetRequest):
     # Vous pouvez utiliser un parseur HTML (ex. BeautifulSoup)
     # Ici, solution minimaliste par regex
     import re
+
     matches = re.findall(r"(<div[\s\S]*?</div>)", raw_html, flags=re.IGNORECASE)
     if matches:
         # On prend le premier match
@@ -303,9 +296,7 @@ def insert_custom_asset(payload: CustomAssetRequest):
         # Si rien trouvé, on renvoie tout
         asset_div = raw_html
 
-    return {
-        "asset_html": asset_div
-    }
+    return {"asset_html": asset_div}
 
 
 # ----------------------------------------------------------------------------------------
@@ -313,6 +304,7 @@ def insert_custom_asset(payload: CustomAssetRequest):
 # ----------------------------------------------------------------------------------------
 class ExternalLinkBuildingRequest(BaseModel):
     content: str
+
 
 @app.post("/externalLinkBuilding")
 def external_link_building(payload: ExternalLinkBuildingRequest):
@@ -348,18 +340,19 @@ def external_link_building(payload: ExternalLinkBuildingRequest):
 
     # On peut imaginer un "nettoyage" ou "sanitizing" ici
     # updated_content = sanitize_html(updated_content) ...
-    
-    return {
-        "updated_content": updated_content
-    }
+
+    return {"updated_content": updated_content}
+
 
 # ----------------------------------------------------------------------------------------
 # 3) RefineContent feature
 # ----------------------------------------------------------------------------------------
 
+
 class RefineContentRequest(BaseModel):
     content: str
     refine_instruction: str
+
 
 @app.post("/refineContent")
 def refine_content(payload: RefineContentRequest):
@@ -400,9 +393,7 @@ def refine_content(payload: RefineContentRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    return {
-        "updated_content": refined_content
-    }
+    return {"updated_content": refined_content}
 
 
 ########################################
@@ -414,6 +405,7 @@ class InsertCTAsRequest(BaseModel):
     wantsCTA: bool
     ctaCount: int
     ctaValues: List[str]
+
 
 @app.post("/insertCTAs")
 def insert_ctas(payload: InsertCTAsRequest):
@@ -467,6 +459,7 @@ class ApplyImagesRequest(BaseModel):
     imageCount: int
     images: List[str]  # contiendra soit URL ou prompt
 
+
 @app.post("/applyImages")
 def apply_images(payload: ApplyImagesRequest):
     """
@@ -502,19 +495,18 @@ def apply_images(payload: ApplyImagesRequest):
         for prompt in payload.images:
             try:
                 image_url = openai_client.call_api(
-                    api_type="image",
-                    model="dall-e-3",
-                    prompt=prompt
+                    api_type="image", model="dall-e-3", prompt=prompt
                 )
                 # On suppose que call_api(..., api_type="images") renvoie directement un url
                 updated_content += f"\n<img src='{image_url}' alt='{prompt}' />\n"
-            except Exception as e:
+            except Exception:
                 # En cas d'erreur, on insère un fallback
-                updated_content += f"\n<img src='https://via.placeholder.com/600?text=Error+Image' alt='Error' />\n"
+                updated_content += "\n<img src='https://via.placeholder.com/600?text=Error+Image' alt='Error' />\n"
     else:
         updated_content = content
 
     return {"updated_content": updated_content}
+
 
 class TechnicalAuditRequest(BaseModel):
     store: Optional[str] = None
@@ -523,21 +515,28 @@ class TechnicalAuditRequest(BaseModel):
     article_content: Optional[str] = None
     title: Optional[str] = None
 
+
 class TechnicalAuditResponse(BaseModel):
     recommendations: List[Dict[str, Any]] = []
     original_content: Optional[str] = None
+
 
 class ApplyTechnicalAuditRequest(BaseModel):
     original_content: str
     audit_report: List[Dict[str, Any]]
 
+
 class ApplyTechnicalAuditResponse(BaseModel):
     updated_content: str
 
-# ==== Cette fonction parse le JSON renvoyé par l'IA, 
+
+# ==== Cette fonction parse le JSON renvoyé par l'IA,
 #      en essayant plusieurs stratégies ====
 
-def extract_recommendations_from_raw_response(raw_response: str) -> List[Dict[str, Any]]:
+
+def extract_recommendations_from_raw_response(
+    raw_response: str,
+) -> List[Dict[str, Any]]:
     """
     1) Tente un json.loads direct
     2) Sinon, cherche un bloc ```json ... ```
@@ -562,18 +561,20 @@ def extract_recommendations_from_raw_response(raw_response: str) -> List[Dict[st
         except Exception:
             pass
 
-    # 3) Fallback : impossible de parser => on renvoie un "Info" 
+    # 3) Fallback : impossible de parser => on renvoie un "Info"
     return [
         {
             "priority": "Info",
             "issue": "Impossible de parser le JSON",
-            "recommendation": raw_response
+            "recommendation": raw_response,
         }
     ]
+
 
 # Exemple d’imports pour OpenAIClient et ShopifyBlogger
 # from src.packages.bloggers.shopify_blogger import ShopifyBlogger
 # from src.packages.utils.openai import OpenAIClient
+
 
 @app.post("/technicalAudit", response_model=TechnicalAuditResponse)
 def technical_audit(payload: TechnicalAuditRequest):
@@ -591,7 +592,7 @@ def technical_audit(payload: TechnicalAuditRequest):
         if not payload.store or not payload.token or not payload.blog_id:
             raise HTTPException(
                 status_code=400,
-                detail="Missing store/token/blogId or article_content in request"
+                detail="Missing store/token/blogId or article_content in request",
             )
         blogger = ShopifyBlogger()
         blogger.shop_url = payload.store
@@ -630,8 +631,7 @@ def technical_audit(payload: TechnicalAuditRequest):
 
     # On renvoie un TechnicalAuditResponse => le front aura un array de recos direct
     return TechnicalAuditResponse(
-        recommendations=recommendations,
-        original_content=article_html
+        recommendations=recommendations, original_content=article_html
     )
 
 
@@ -675,10 +675,9 @@ def apply_technical_audit(payload: ApplyTechnicalAuditRequest):
     return ApplyTechnicalAuditResponse(updated_content=updated_html)
 
 
-
-
 class WebAuditRequest(BaseModel):
     url: str
+
 
 @app.post("/webAudit", response_model=TechnicalAuditResponse)
 def web_audit(payload: WebAuditRequest):
@@ -690,15 +689,13 @@ def web_audit(payload: WebAuditRequest):
         resp = httpx.get(website_url, timeout=10)
         if resp.status_code != 200:
             raise HTTPException(
-                status_code=400,
-                detail=f"Cannot fetch URL, status {resp.status_code}"
+                status_code=400, detail=f"Cannot fetch URL, status {resp.status_code}"
             )
         raw_html = resp.text
         print(raw_html)
     except RequestError as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error scraping URL via httpx: {str(e)}"
+            status_code=500, detail=f"Error scraping URL via httpx: {str(e)}"
         )
 
     # 2) Appel OpenAI
@@ -723,14 +720,13 @@ def web_audit(payload: WebAuditRequest):
 
     recommendations = extract_recommendations_from_raw_response(raw_response)
     return TechnicalAuditResponse(
-        recommendations=recommendations,
-        original_content=raw_html
+        recommendations=recommendations, original_content=raw_html
     )
-
 
 
 class WebAuditNoCheckRequest(BaseModel):
     url: str
+
 
 @app.post("/webAuditNoCheck")
 def web_audit_no_check(payload: WebAuditNoCheckRequest):
@@ -757,7 +753,7 @@ def web_audit_no_check(payload: WebAuditNoCheckRequest):
             "success": False,
             "error": f"Error scraping URL via httpx: {str(e)}",
             "original_content": "",
-            "recommendations": []
+            "recommendations": [],
         }
 
     # 3) Appel OpenAI
@@ -783,19 +779,20 @@ def web_audit_no_check(payload: WebAuditNoCheckRequest):
         return {
             "success": True,
             "recommendations": recommendations,
-            "original_content": raw_html
+            "original_content": raw_html,
         }
     except Exception as e:
         return {
             "success": False,
             "error": str(e),
             "original_content": raw_html,
-            "recommendations": []
+            "recommendations": [],
         }
 
 
 class ExtractKeyContentRequest(BaseModel):
     url: str
+
 
 @app.post("/extractKeyContent")
 def extract_key_content(payload: ExtractKeyContentRequest):
@@ -825,7 +822,9 @@ def extract_key_content(payload: ExtractKeyContentRequest):
 
     # Meta description
     desc_tag = soup.find("meta", attrs={"name": "description"})
-    meta_description = desc_tag["content"] if desc_tag and desc_tag.has_attr("content") else ""
+    meta_description = (
+        desc_tag["content"] if desc_tag and desc_tag.has_attr("content") else ""
+    )
 
     # h1, h2
     h1_list = [h.get_text(" ", strip=True) for h in soup.find_all("h1")]
@@ -847,7 +846,6 @@ def extract_key_content(payload: ExtractKeyContentRequest):
     }
 
 
-
 @app.post("/Keywords-to-topics")
 def keywords_to_topics(payload: EvaluatedKeyword) -> Dict[str, str]:
     """
@@ -856,21 +854,19 @@ def keywords_to_topics(payload: EvaluatedKeyword) -> Dict[str, str]:
     then transform it into a JSON with a rephrased keyword (changing it to a topic) and a short descriptive sentence.
 
     e.g.
-    Input: 
+    Input:
       keyword="ecommerce AI", difficulty=40, traffic=1000
     Output:
       {
-        "Application of AI in ecommerce": 
+        "Application of AI in ecommerce":
         "This topic has 1000 searches per month and 40 difficulty, which make it really interesting"
       }
     """
 
     # 1) On prépare la ligne "keyword: ..., difficulty: X, traffic: Y"
-    line_str = (
-        f"keyword: {payload.keyword}, difficulty: {payload.difficulty}, traffic: {payload.traffic}"
-    )
-    
-    # 2) On construit un prompt demandant un JSON (dict) 
+    line_str = f"keyword: {payload.keyword}, difficulty: {payload.difficulty}, traffic: {payload.traffic}"
+
+    # 2) On construit un prompt demandant un JSON (dict)
     #    avec "clé = mot‐clé reformulé" et "valeur = phrase descriptive".
     prompt = f"""
 Transform the following line into a JSON dictionary, where the key is a short, rephrased topic name
@@ -892,14 +888,14 @@ Line to transform:
     try:
         openai_client = OpenAIClient()
         response_text = openai_client.call_api(
-            api_type="text", 
+            api_type="text",
             model="gpt-4o",  # ou gpt-3.5-turbo etc.
-            prompt=prompt
+            prompt=prompt,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
 
-    # 4) On parse la chaîne renvoyée, qui doit être un JSON 
+    # 4) On parse la chaîne renvoyée, qui doit être un JSON
     try:
         rephrased_dict = json.loads(response_text)
         # On attend un dict du style:
@@ -909,7 +905,7 @@ Line to transform:
         if not isinstance(rephrased_dict, dict):
             raise ValueError("Parsed JSON is not a dictionary.")
 
-    except Exception as e:
+    except Exception:
         # En cas d’erreur de parsing, on renvoie une 500
         raise HTTPException(
             status_code=500,
@@ -920,18 +916,20 @@ Line to transform:
 
 
 class DomainRequest(BaseModel):
-    domain: str 
+    domain: str
+
 
 @app.post("/generateKeywordsFromDomain")
 def generate_keywords_from_domain(payload: DomainRequest):
     """
-    
+
     TODO: call a function that do web scraping then generate 3 keywords using the KeywordResearcher
 
     returns a JSON 3 keywords and their metrics in a sentence
     """
 
-    return 
+    return
+
 
 @app.post("/mock_generateKeywordsFromDomain")
 def generate_keywords(payload: DomainRequest):
@@ -944,7 +942,11 @@ def generate_keywords(payload: DomainRequest):
     # 3) Renvoyer 3 mots‐clés
     # => Pour l'exemple, je renvoie des mots‐clés en dur
 
-    keywords = ["chaussures de randonnée", "conseils trekking", "réparation de chaussures"]
+    keywords = [
+        "chaussures de randonnée",
+        "conseils trekking",
+        "réparation de chaussures",
+    ]
     return keywords
 
 
@@ -965,7 +967,7 @@ def summarize_site_content_for_demo(site_url: str) -> Dict[str, Dict[str, str] |
             model="o1-mini",
             prompt=prompt,
         )
-        
-        return {"status": 200, "data": { "summary": summary} } 
+
+        return {"status": 200, "data": {"summary": summary}}
     except Exception as e:
         return {"status": 500, "data": {"error": str(e)}}
