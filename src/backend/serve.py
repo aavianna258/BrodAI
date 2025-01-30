@@ -922,27 +922,47 @@ Line to transform:
 class DomainRequest(BaseModel):
     domain: str 
 
-@app.post("/generateKeywordsFromDomain")
+@app.post("/generateKeywordsFrom")
 def generate_keywords_from_domain(payload: DomainRequest):
     """
     
-    TODO: call a function that do web scraping then generate 3 keywords using the KeywordResearcher
+    TODO: call a function that do web scraping then generate keywords list using the KeywordResearcher
 
-    returns a JSON 3 keywords and their metrics in a sentence
+    returns a JSON N keywords and their metrics in a sentence
     """
 
     return 
 
-@app.post("/mock_generateKeywordsFromDomain")
-def generate_keywords(payload: DomainRequest):
-    domain = payload.domain
-    if not domain:
-        raise HTTPException(status_code=400, detail="Missing domain")
 
-    # 1) Récupérer des infos sur le domain (facultatif) : on peut crawler le site, etc.
-    # 2) Faire un prompt à OpenAI en lui donnant le domaine, ou un résumé du site
-    # 3) Renvoyer 3 mots‐clés
-    # => Pour l'exemple, je renvoie des mots‐clés en dur
+@app.post("/domain_to_keywords")
+def gen_kw_domain(payload : DomainRequest)-> Dict[str, List[BrodAIKeyword]]:
 
-    keywords = ["chaussures de randonnée", "conseils trekking", "réparation de chaussures"]
-    return keywords
+    return {
+        "2-words": [
+            {
+                "keyword": "exemple-mot-cle-1",
+                "traffic": 1500,
+                "difficulty": 0.42,
+                "performance_score": 0.8
+            },
+            {
+                "keyword": "exemple-mot-cle-2",
+                "traffic": 900,
+                "difficulty": 0.35,
+                "performance_score": 0.65
+            },
+            {
+                "keyword": "exemple-mot-cle-3",
+                "traffic": 3000,
+                "difficulty": 0.58,
+                "performance_score": 0.75
+            }
+        ]
+    }
+
+
+
+
+
+
+

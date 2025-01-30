@@ -5,30 +5,31 @@ import React, { useState } from 'react';
 import { Row, Col, Input, Button, Spin, message, Table } from 'antd';
 import { motion } from 'framer-motion';
 import { LoadingOutlined } from '@ant-design/icons';
-import { fetchKeywords, IBrodAIKeyword } from '@/components/keyword-research/KeywordResearchService';
+import { fetchKeywords, fetchDomain, IBrodAIKeyword } from '@/components/keyword-research/KeywordResearchService';
 import { useRouter } from 'next/navigation';
 
 
 
 export default function KeywordResearchPage() {
   const [mainKeyword, setMainKeyword] = useState('');
+  const [domain, setDomain] = useState('');
   const [loading, setLoading] = useState(false);
   const [keywords, setKeywords] = useState<IBrodAIKeyword[]>([]);
 
   const spinnerIcon = <LoadingOutlined style={{ fontSize: 28 }} spin />;
 
   const handleSearch = async () => {
-    if (!mainKeyword.trim()) {
-      message.warning('Please enter a main keyword or phrase.');
+    if (!domain.trim()) {
+      message.warning('Please enter a valid domain.');
       return;
     }
     setLoading(true);
     setKeywords([]);
     try {
-      const data = await fetchKeywords(mainKeyword);
+      const data = await fetchDomain(domain);
       setKeywords(data);
     } catch (error: any) {
-      message.error(error.message || 'Error fetching keyword data');
+      message.error(error.message || 'Error fetching domain');
     } finally {
       setLoading(false);
     }
@@ -86,14 +87,14 @@ export default function KeywordResearchPage() {
               fontWeight: 'bold',
             }}
           >
-            Keyword Research
+            Keyword Research from Domain
           </motion.h2>
 
           <div style={{ marginBottom: 24 }}>
             <Input
-              placeholder="Enter your main keyword or phrase"
-              value={mainKeyword}
-              onChange={(e) => setMainKeyword(e.target.value)}
+              placeholder="Enter your domain"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
               style={{ maxWidth: 400, marginRight: 8 }}
             />
             <Button type="primary" onClick={handleSearch}>
