@@ -24,27 +24,27 @@ export default function BrodAIStepProcess({ onFinished }: BrodAIStepProcessProps
       text: 'Evaluating what competitors are missing so you can rank faster with less competition.',
       duration: 2000,
     },
+    // {
+    //   title: 'Step 3: Writing Article #1',
+    //   text: 'Drafting a comprehensive, data-driven piece designed to capture top positions on Google.',
+    //   duration: 1500,
+    // },
+    // {
+    //   title: 'Step 4: Writing Article #2',
+    //   text: 'Adding strategic links, visuals, and expert insights to create another SEO-ready post.',
+    //   duration: 1500, 
+    // },
+    // {
+    //   title: 'Step 5: Writing Article #3',
+    //   text: 'Finalizing a third rich-media article to diversify your content and boost authority.',
+    //   duration: 1500,
+    // },
     {
-      title: 'Step 3: Writing Article #1',
-      text: 'Drafting a comprehensive, data-driven piece designed to capture top positions on Google.',
-      duration: 1500,
-    },
-    {
-      title: 'Step 4: Writing Article #2',
-      text: 'Adding strategic links, visuals, and expert insights to create another SEO-ready post.',
-      duration: 1500, 
-    },
-    {
-      title: 'Step 5: Writing Article #3',
-      text: 'Finalizing a third rich-media article to diversify your content and boost authority.',
-      duration: 1500,
-    },
-    {
-      title: 'Step 6: Ready to Publish',
-      text: 'All articles polished and primed for launch—get set for a surge in organic traffic!',
+      title: 'Step 3: Refining High-Impact Keywords',
+      text: 'BrodAI is fine-tuning your keyword strategy to maximize search engine visibility and drive targeted traffic.',
       duration: 2000, 
     },
-  ];
+    ];
 
   const [stepIndex, setStepIndex] = useState(0);
 
