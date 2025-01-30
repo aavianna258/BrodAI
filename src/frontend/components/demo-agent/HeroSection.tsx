@@ -69,7 +69,55 @@ export default function HeroSection({
       isLast: true, // We'll check this below
     },
   ];
+{/*
+  const handleAnalyze = async () => {
+    // 1) Appeler un endpoint pour générer nos 3 mots‐clés
+    try {
+      const response = await fetch('http://localhost:8000/generateKeywordsFromDomain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Erreur pendant la génération des mots‐clés');
+      }
 
+      // 2) Récupérer la liste [keyword1, keyword2, keyword3]
+      const keywords = await response.json(); 
+      // keywords : string[]
+
+      // 3) Générer un article pour chacun
+      const articlesData = [];
+      for (const kw of keywords) {
+        const articleResp = await fetch('http://localhost:8000/generateArticle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ main_keyword: kw }),
+        });
+
+        if (!articleResp.ok) {
+          throw new Error(`Erreur pour le mot‐clé : ${kw}`);
+        }
+        const article = await articleResp.json();
+        // { title: string, content: string }
+
+        // On stocke dans un tableau local
+        articlesData.push({ keyword: kw, ...article });
+      }
+
+      // 4) Mettre à jour l’état local, pour être affiché plus tard
+      setArticles(articlesData);
+
+      // 5) Optionnel : Changer un état pour signaler qu’on a fini l’analyse
+      // setShowResults(true);
+
+    } catch (error) {
+      console.error(error);
+      alert("Impossible de générer les articles : " + (error as Error).message);
+    }
+  };
+*/}
   return (
     <div style={{ textAlign: 'center', padding: '40px 20px' }}>
       {/* Animated heading */}

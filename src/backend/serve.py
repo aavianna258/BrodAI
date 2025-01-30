@@ -13,11 +13,15 @@ from src.packages.utils.openai import OpenAIClient
 from src.packages.utils.misc import extract_json
 from src.packages.utils.web_scraper import extract_website_info
 
-
+import httpx
 from dotenv import load_dotenv
-import os
 import json
 import re 
+import httpx
+from httpx import RequestError
+from bs4 import BeautifulSoup
+from fastapi import HTTPException
+from pydantic import BaseModel
 
 
 load_dotenv()
@@ -85,45 +89,6 @@ class CreateArticlePayload(BaseModel):
 def read_root() -> Dict[str, str]:
     return {"Hello": "World"}
 
-
-"""
-@app.post("/generate_traffic_report")
-def generate_traffic_report_and_preview(url: str) -> Dict:
-    try:
-        # extract text from URL
-        page_content = WebpageScrapper(url).get_url_content()
-
-        # generate SemRush report for the current search engine performance
-        researcher = KeywordResearcher(page_content)
-        sr_report = researcher.generate_sem_rush_report()
-
-        # get target keywords
-        target_keywords = researcher.research_best_keywords()
-
-        return {
-            "traffic_report": sr_report,
-            "target_kwd_report": target_keywords,
-            "page_content": page_content,
-        }
-
-    except RequestException:
-        raise RequestError("There was an issue in the system. Please try again later.")
-"""
-
-
-@app.post("/optimise_product_page")
-def optimise_product_page(
-    product_page_content: str, target_keywords: List[str]
-) -> str | Any:
-    try:
-        optimised_content = ProductPageOptimiser(
-            product_page_content, target_keywords
-        ).optimise_page_for_target_kwds()
-
-        return optimised_content
-
-    except RequestException:
-        raise RequestError("There was an issue in the system. Please try again later.")
 
 
 @app.post("/keyword_research")
@@ -717,25 +682,26 @@ class WebAuditRequest(BaseModel):
 
 @app.post("/webAudit", response_model=TechnicalAuditResponse)
 def web_audit(payload: WebAuditRequest):
-    """
-    1) Scrappe le HTML de la page (payload.url).
-    2) Envoie ce HTML à OpenAI (même prompt que l'audit).
-    3) Retourne la liste de recos + le HTML d'origine.
-    """
     website_url = payload.url.strip()
-    if not website_url.startswith("http"):
-        raise HTTPException(status_code=400, detail="URL must start with http:// or https://")
 
-    # 1) Scraping
+    print(website_url)
+    # 1) Scraping via httpx
     try:
-        resp = requests.get(website_url, timeout=10)
+        resp = httpx.get(website_url, timeout=10)
         if resp.status_code != 200:
-            raise HTTPException(status_code=400, detail=f"Cannot fetch URL, status {resp.status_code}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot fetch URL, status {resp.status_code}"
+            )
         raw_html = resp.text
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error scraping URL: {str(e)}")
+        print(raw_html)
+    except RequestError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error scraping URL via httpx: {str(e)}"
+        )
 
-    # 2) Appel OpenAI (même prompt que pour l'article)
+    # 2) Appel OpenAI
     openai_client = OpenAIClient()
     prompt = (
         f"Tu es un expert SEO technique. Je te fournis le code HTML d'un site web.\n\n"
@@ -755,10 +721,228 @@ def web_audit(payload: WebAuditRequest):
         prompt=prompt,
     )
 
-    # 3) Parser la réponse (même fonction que /technicalAudit)
     recommendations = extract_recommendations_from_raw_response(raw_response)
-
     return TechnicalAuditResponse(
         recommendations=recommendations,
         original_content=raw_html
     )
+
+
+
+class WebAuditNoCheckRequest(BaseModel):
+    url: str
+
+@app.post("/webAuditNoCheck")
+def web_audit_no_check(payload: WebAuditNoCheckRequest):
+    """
+    1) On accepte TOUTE forme d'URL (même "brod-ai.com" sans http).
+    2) On essaie d'ajouter "https://" si besoin.
+    3) On n'exige pas code 200 (on laisse la requête se faire).
+    4) On fait l'appel OpenAI pour un audit technique.
+    5) On renvoie un JSON `recommendations + original_content`.
+    """
+
+    # 1) Tenter de normaliser l'URL si pas de http
+    website_url = payload.url.strip()
+    if not (website_url.startswith("http://") or website_url.startswith("https://")):
+        website_url = "https://" + website_url  # ou "http://" si tu préfères
+
+    # 2) Scraping via httpx
+    try:
+        resp = httpx.get(website_url, timeout=10, follow_redirects=True)
+        raw_html = resp.text
+    except RequestError as e:
+        # Au lieu de lever un 500, on renvoie un JSON "error"
+        return {
+            "success": False,
+            "error": f"Error scraping URL via httpx: {str(e)}",
+            "original_content": "",
+            "recommendations": []
+        }
+
+    # 3) Appel OpenAI
+    openai_client = OpenAIClient()
+    prompt = (
+        f"Tu es un expert SEO technique. Je te fournis le code HTML d'un site web.\n\n"
+        f"HTML:\n{raw_html}\n\n"
+        f"Analyse-le du point de vue SEO/technique (microdonnées, structure, meta tags...).\n"
+        f"Retourne-moi IMPÉRATIVEMENT un JSON sous forme de tableau, par ex:\n"
+        f"[\n"
+        f"  {{ 'priority': 'High'|'Medium'|'Low', 'issue': '...', 'recommendation': '...' }},\n"
+        f"  ...\n"
+        f"]\n"
+        f"Ne donne pas d'autres explications, juste le JSON pur."
+    )
+    try:
+        raw_response = openai_client.call_api(
+            api_type="text",
+            model="o1-mini",
+            prompt=prompt,
+        )
+        recommendations = extract_recommendations_from_raw_response(raw_response)
+        return {
+            "success": True,
+            "recommendations": recommendations,
+            "original_content": raw_html
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "original_content": raw_html,
+            "recommendations": []
+        }
+
+
+class ExtractKeyContentRequest(BaseModel):
+    url: str
+
+@app.post("/extractKeyContent")
+def extract_key_content(payload: ExtractKeyContentRequest):
+    """
+    1) Scrape la page (sans impose la forme de l'URL).
+    2) Parse avec BeautifulSoup pour extraire:
+       - title, meta description,
+       - h1, h2,
+       - optionally first paragraphs, images alt, etc.
+    3) Retourne ces infos en JSON (PAS d'appel GPT).
+    """
+    website_url = payload.url.strip()
+    if not (website_url.startswith("http://") or website_url.startswith("https://")):
+        website_url = "https://" + website_url
+
+    try:
+        resp = httpx.get(website_url, timeout=10, follow_redirects=True)
+        raw_html = resp.text
+    except RequestError as e:
+        return {"success": False, "error": f"Error scraping URL: {str(e)}"}
+
+    soup = BeautifulSoup(raw_html, "html.parser")
+
+    # Title
+    title_tag = soup.find("title")
+    title = title_tag.get_text(strip=True) if title_tag else ""
+
+    # Meta description
+    desc_tag = soup.find("meta", attrs={"name": "description"})
+    meta_description = desc_tag["content"] if desc_tag and desc_tag.has_attr("content") else ""
+
+    # h1, h2
+    h1_list = [h.get_text(" ", strip=True) for h in soup.find_all("h1")]
+    h2_list = [h.get_text(" ", strip=True) for h in soup.find_all("h2")]
+
+    # Optionnel: Extrait quelques paragraphes
+    paragraphs = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
+    # On limite par exemple aux 10 premiers
+    paragraphs = paragraphs[:10]
+
+    return {
+        "success": True,
+        "title": title,
+        "meta_description": meta_description,
+        "h1": h1_list,
+        "h2": h2_list,
+        "paragraphs": paragraphs,
+        # Tu peux aussi extraire les images, liens, etc.
+    }
+
+
+
+@app.post("/Keywords-to-topics")
+def keywords_to_topics(payload: EvaluatedKeyword) -> Dict[str, str]:
+    """
+    TODO: call openai api to change the line from the 'report' of the endpoint /keyword_research
+
+    then transform it into a JSON with a rephrased keyword (changing it to a topic) and a short descriptive sentence.
+
+    e.g.
+    Input: 
+      keyword="ecommerce AI", difficulty=40, traffic=1000
+    Output:
+      {
+        "Application of AI in ecommerce": 
+        "This topic has 1000 searches per month and 40 difficulty, which make it really interesting"
+      }
+    """
+
+    # 1) On prépare la ligne "keyword: ..., difficulty: X, traffic: Y"
+    line_str = (
+        f"keyword: {payload.keyword}, difficulty: {payload.difficulty}, traffic: {payload.traffic}"
+    )
+    
+    # 2) On construit un prompt demandant un JSON (dict) 
+    #    avec "clé = mot‐clé reformulé" et "valeur = phrase descriptive".
+    prompt = f"""
+Transform the following line into a JSON dictionary, where the key is a short, rephrased topic name
+and the value is a short descriptive sentence. 
+
+Example:
+If the line is "keyword: ecommerce AI, difficulty: 40, traffic: 1000", you might return:
+{{
+  "Application of AI in ecommerce": "This topic has 1000 searches per month and 40 difficulty, which make it really interesting."
+}}
+
+No extra text. Valid JSON only.
+
+Line to transform:
+{line_str}
+    """.strip()
+
+    # 3) Appel à l'API OpenAI via OpenAIClient
+    try:
+        openai_client = OpenAIClient()
+        response_text = openai_client.call_api(
+            api_type="text", 
+            model="gpt-4o",  # ou gpt-3.5-turbo etc.
+            prompt=prompt
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
+
+    # 4) On parse la chaîne renvoyée, qui doit être un JSON 
+    try:
+        rephrased_dict = json.loads(response_text)
+        # On attend un dict du style:
+        # {
+        #   "Application of AI in ecommerce": "This topic has 1000 searches per month..."
+        # }
+        if not isinstance(rephrased_dict, dict):
+            raise ValueError("Parsed JSON is not a dictionary.")
+
+    except Exception as e:
+        # En cas d’erreur de parsing, on renvoie une 500
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to parse GPT response as JSON: {response_text}",
+        )
+
+    return rephrased_dict
+
+
+class DomainRequest(BaseModel):
+    domain: str 
+
+@app.post("/generateKeywordsFromDomain")
+def generate_keywords_from_domain(payload: DomainRequest):
+    """
+    
+    TODO: call a function that do web scraping then generate 3 keywords using the KeywordResearcher
+
+    returns a JSON 3 keywords and their metrics in a sentence
+    """
+
+    return 
+
+@app.post("/mock_generateKeywordsFromDomain")
+def generate_keywords(payload: DomainRequest):
+    domain = payload.domain
+    if not domain:
+        raise HTTPException(status_code=400, detail="Missing domain")
+
+    # 1) Récupérer des infos sur le domain (facultatif) : on peut crawler le site, etc.
+    # 2) Faire un prompt à OpenAI en lui donnant le domaine, ou un résumé du site
+    # 3) Renvoyer 3 mots‐clés
+    # => Pour l'exemple, je renvoie des mots‐clés en dur
+
+    keywords = ["chaussures de randonnée", "conseils trekking", "réparation de chaussures"]
+    return keywords

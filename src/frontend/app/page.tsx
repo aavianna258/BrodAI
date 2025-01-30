@@ -4,11 +4,14 @@ import SEOProcessTimeline from '@/components/home/SEOProcessTimeline';
 import PricingSection from '@/components/home/PricingSection';
 import HeroSection from '@/components/home/HeroSection'; 
 import FaqSection from '@/components/home/FaqSection';
+import BrodAIAnalysisSection from '@/components/home/BrodaiAnalysisSection';
+import BrodAIHeroAnalysis from '@/components/home/testsection';
 
 export default function HomePage() {
   return (
     <>
-      <HeroSection />
+      <BrodAIHeroAnalysis />
+      <BrodAIAnalysisSection />
       <SEOProcessTimeline />
       <PricingSection />
       <FaqSection />

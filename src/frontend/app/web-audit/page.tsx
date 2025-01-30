@@ -37,7 +37,7 @@ export default function WebAuditPage() {
     setLoading(true);
     try {
       // Appel au backend
-      const resp = await fetch("http://localhost:8000/webAudit", {
+      const resp = await fetch("http://localhost:8000/webAuditNoCheck", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
@@ -69,7 +69,7 @@ export default function WebAuditPage() {
         style={{ marginBottom: "1rem" }}
       />
       <Button type="primary" onClick={handleAudit} disabled={loading}>
-        {loading ? <Spin /> : "Scrape & Audit"}
+        {loading ? <Spin /> : "Audit"}
       </Button>
 
       {/* Modal d'affichage du rapport */}
