@@ -1,18 +1,20 @@
 // app/keyword-research/page.tsx or pages/keyword-research.tsx
+
 'use client'; // for Next.js 13 with App Router
-
-'use client';
-
-import { useTypewriter, Cursor } from 'react-simple-typewriter';
 
 import React, { useState } from 'react';
 import { Row, Col, Input, Button, Spin, message, Table } from 'antd';
 import { motion } from 'framer-motion';
 import { LoadingOutlined } from '@ant-design/icons';
-import { fetchKeywords, fetchDomain, IBrodAIKeyword } from '@/components/keyword-research/KeywordResearchService';
 import { useRouter } from 'next/navigation';
 
+// ADDED: For the typed heading animations
+import { useTypewriter, Cursor } from 'react-simple-typewriter';
 
+import {
+  fetchKeywords,
+  IBrodAIKeyword
+} from '@/components/keyword-research/KeywordResearchService';
 
 export default function KeywordResearchPage() {
   const [mainKeyword, setMainKeyword] = useState('');
@@ -20,9 +22,25 @@ export default function KeywordResearchPage() {
   const [loading, setLoading] = useState(false);
   const [keywords, setKeywords] = useState<IBrodAIKeyword[]>([]);
 
+  const router = useRouter();
+
+  // ADDED: typed heading logic
+  const [text] = useTypewriter({
+    words: [
+      'A 24/7 SEO Consultant...',
+      'Daily Site Audits & Error Fixes...',
+      'Trend Research & Fresh Content...',
+      'Link Building & Publications...'
+    ],
+    loop: 0,
+    typeSpeed: 60,
+    deleteSpeed: 50,
+    delaySpeed: 1200
+  });
+
   const spinnerIcon = <LoadingOutlined style={{ fontSize: 28 }} spin />;
 
-
+  // Existing handler for the table
   const handleSearch = async () => {
     if (!mainKeyword.trim()) {
       message.warning('Please enter a valid domain.');
@@ -40,14 +58,12 @@ export default function KeywordResearchPage() {
     }
   };
 
-  const router = useRouter();
-
   function handleWriteArticle(keyword: string) {
-    // On peut pousser vers /create-article en passant la query `keyword`
+    // Redirect to /create-article with the selected keyword
     router.push(`/create-article?keyword=${encodeURIComponent(keyword)}`);
   }
 
-  // Table columns
+  // Existing columns definition
   const columns = [
     { title: 'Keyword', dataIndex: 'keyword', key: 'keyword' },
     { title: 'Traffic', dataIndex: 'traffic', key: 'traffic' },
@@ -57,124 +73,206 @@ export default function KeywordResearchPage() {
       title: 'Actions',
       key: 'actions',
       render: (text: any, record: IBrodAIKeyword) => (
-        // Exemple avec Link :
-        // <Link href={`/create-article?keyword=${encodeURIComponent(record.keyword)}`}>
-        //   <Button type="primary">Write an article</Button>
-        // </Link>
-  
-        // OU exemple avec un handleWriteArticle :
         <Button type="primary" onClick={() => handleWriteArticle(record.keyword)}>
           Write an article
         </Button>
       )
-    },
+    }
   ];
+
+  // ADDED: We only use the first 2 steps for "How It Works."
+  const miniSteps = [
+    {
+      text: 'Daily SEO Audits & Automatic Error Fixes'
+    },
+    {
+      text: 'Research Trending Keywords & Create Fresh Content'
+    }
+  ];
+
+  // Step animation variants
+  const stepVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        delay: i * 0.1,
+        duration: 0.4
+      }
+    })
+  };
 
   return (
     <div
       style={{
         padding: '60px 20px',
         textAlign: 'center',
-        minHeight: '70vh', // Reduced to avoid a very tall layout initially
-        background: 'linear-gradient(90deg, #e0ecff 0%, #f0f4ff 100%)',
+        minHeight: '70vh',
+        background: 'linear-gradient(90deg, #e0ecff 0%, #f0f4ff 100%)'
       }}
     >
-      <Row justify="center">
+      {/* 
+        1) TITLE & INTRO (copied exactly from demo_agent’s HeroSection)
+      */}
+      <motion.h1
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+        style={{
+          fontSize: '2rem',
+          color: '#2563EB',
+          marginBottom: '16px',
+          fontWeight: 'bold'
+        }}
+      >
+        BrodAI:
+        <span style={{ marginLeft: 8 }}>{text}</span>
+        <Cursor cursorColor="#2563EB" />
+      </motion.h1>
+
+      <motion.h2
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9 }}
+        style={{
+          color: '#555',
+          marginBottom: 24,
+          fontSize: '1.15rem',
+          maxWidth: 800,
+          margin: '0 auto',
+          lineHeight: 1.5
+        }}
+      >
+        BrodAI is your <strong>24/7</strong> SEO consultant. Every day, it audits your site,
+        fixes errors, researches <strong>trending keywords</strong>, and publishes new articles.
+      </motion.h2>
+
+      {/* 
+        2) EXISTING DOMAIN INPUT FOR KEYWORD SEARCH
+      */}
+      <Row justify="center" style={{ marginBottom: 24 }}>
         <Col xs={24} sm={20} md={14} lg={12}>
-          <motion.h2
-            initial={{ opacity: 0, y: -15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            style={{
-              fontSize: '2rem',
-              color: '#2563EB',
-              marginBottom: '16px',
-              fontWeight: 'bold',
-            }}
-          >
-            Keyword Research from Domain
-          </motion.h2>
-
-          <div style={{ marginBottom: 24 }}>
-            <Input
-              placeholder="Enter your domain"
-              value={mainKeyword}
-              onChange={(e) => setMainKeyword(e.target.value)}
-              style={{ maxWidth: 400, marginRight: 8 }}
-            />
-            <Button type="primary" onClick={handleSearch}>
-              Search
-            </Button>
-          </div>
-
-          {loading && (
-            <motion.div
-              initial={{ rotate: 0 }}
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-              style={{
-                margin: '0 auto',
-                width: '50px',
-                height: '50px',
-                color: '#2563EB',
-              }}
-            >
-              <Spin indicator={spinnerIcon} />
-            </motion.div>
-          )}
-
-          {!loading && keywords.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              style={{
-                background: '#f9fafb',
-                textAlign: 'left',
-                padding: '16px',
-                borderRadius: '8px',
-              }}
-            >
-              <h3 style={{ textAlign: 'center', fontWeight: 600, marginBottom: 16 }}>
-                Top Keywords Related to "{mainKeyword}"
-              </h3>
-              <Table
-                columns={columns}
-                dataSource={keywords.map((item, idx) => ({ key: idx, ...item }))}
-                pagination={false}
-              />
-            </motion.div>
-          )}
-
-          {/* Additional section: highlights the power of the Keyword Research Agent & free trial */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            style={{
-              marginTop: 40,
-              padding: '24px',
-              backgroundColor: '#fff',
-              borderRadius: 8,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            }}
-          >
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 'bold', marginBottom: 16 }}>
-              Experience Our Powerful Keyword Research Agent
-            </h2>
-            <p style={{ fontSize: '1rem', lineHeight: 1.6, marginBottom: 24 }}>
-              Our agent analyzes your ideas, phrases, or keywords to instantly find the best
-              keywords that will help you rank on Google's first page. Get keywords with high
-              search volume, strong conversion intent, and very low difficulty.
-              <br />
-              BrodAI is offering a free trial of this tool, with 50 free uses to discover its power.
-            </p>
-            <Button type="primary" size="large">
-              Get Your Free Trial (50 Uses)
-            </Button>
-          </motion.div>
+          <Input
+            placeholder="Enter your domain"
+            value={mainKeyword}
+            onChange={(e) => setMainKeyword(e.target.value)}
+            style={{ maxWidth: 400, marginRight: 8 }}
+          />
+          <Button type="primary" onClick={handleSearch}>
+            Search
+          </Button>
         </Col>
       </Row>
+
+      {/* Loader */}
+      {loading && (
+        <motion.div
+          initial={{ rotate: 0 }}
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          style={{
+            margin: '0 auto',
+            width: '50px',
+            height: '50px',
+            color: '#2563EB'
+          }}
+        >
+          <Spin indicator={spinnerIcon} />
+        </motion.div>
+      )}
+
+      {/* Results Table */}
+      {!loading && keywords.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          style={{
+            background: '#f9fafb',
+            textAlign: 'left',
+            padding: '16px',
+            borderRadius: '8px'
+          }}
+        >
+          <h3 style={{ textAlign: 'center', fontWeight: 600, marginBottom: 16 }}>
+            Top Keywords Related to "{mainKeyword}"
+          </h3>
+          <Table
+            columns={columns}
+            dataSource={keywords.map((item, idx) => ({ key: idx, ...item }))}
+            pagination={false}
+          />
+        </motion.div>
+      )}
+
+      {/*
+        3) REMOVED “Experience Our Powerful Keyword Research Agent” section entirely 
+        (the big motion.div with the free trial info).
+      */}
+
+      {/* 
+        4) "How It Works" SECTION (only first 2 steps), placed AFTER the table
+      */}
+      <motion.h3
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        style={{
+          fontSize: '1.15rem',
+          fontWeight: 'bold',
+          marginTop: 40,
+          marginBottom: '1rem',
+          color: '#333'
+        }}
+      >
+        How It Works
+      </motion.h3>
+
+      <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'left' }}>
+        {miniSteps.map((step, i) => (
+          <motion.div
+            key={step.text}
+            custom={i}
+            initial="hidden"
+            animate="visible"
+            variants={stepVariants}
+            style={{
+              marginBottom: '1rem',
+              background: '#fff',
+              borderRadius: 8,
+              padding: '1rem 1.2rem',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem'
+            }}
+          >
+            {/* Step number circle */}
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                backgroundColor: '#2563EB',
+                color: '#fff',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                fontWeight: 'bold',
+                flexShrink: 0
+              }}
+            >
+              {i + 1}
+            </div>
+
+            {/* Step text */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <p style={{ margin: 0, fontSize: '1rem', lineHeight: 1.4 }}>{step.text}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }
