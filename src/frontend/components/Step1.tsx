@@ -324,66 +324,8 @@ export default function Step1(props: Step1Props) {
     message.info("Article réinitialisé.");
   };
 
-  // ================================
-  // TECHNICAL AUDIT
-  // ================================
-  const handleTechnicalAudit = async () => {
-    try {
-      setLoadingAction("technicalAudit");
-      const resp = await fetch("http://localhost:8000/technicalAudit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          article_content: content, // on envoie l'article actuel
-          // éventuellement: store: shopifyDomain, token: shopifyToken, blog_id: ...
-        }),
-      });
-      if (!resp.ok) {
-        throw new Error("Server error on /technicalAudit");
-      }
-      const data = await resp.json();
-      // data.recommendations: tableau de { priority, issue, recommendation }
-      // data.original_content: le HTML initial
-      setTechAuditRecommendations(data.recommendations || []);
-      setTechAuditOriginalContent(data.original_content || "");
-      setTechAuditModalOpen(true);
-    } catch (err) {
-      console.error(err);
-      message.error("Impossible d'effectuer le Technical Audit.");
-    } finally {
-      setLoadingAction(null);
-    }
-  };
 
-  const handleApplyTechnicalAudit = async () => {
-    try {
-      setLoadingAction("applyAudit");
-      const resp = await fetch("http://localhost:8000/applyTechnicalAudit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          original_content: techAuditOriginalContent,
-          audit_report: techAuditRecommendations,
-        }),
-      });
-      if (!resp.ok) {
-        throw new Error("Server error on /applyTechnicalAudit");
-      }
-      const data = await resp.json();
-      if (data.updated_content) {
-        setContent(data.updated_content);
-        message.success("Article corrigé selon l'audit technique !");
-      } else {
-        message.error("Erreur lors de la correction technique");
-      }
-      setTechAuditModalOpen(false);
-    } catch (err) {
-      console.error(err);
-      message.error("Impossible d'appliquer l'audit technique.");
-    } finally {
-      setLoadingAction(null);
-    }
-  };
+
 
   // Pour la démo, on laisse un style custom pour l'aperçu
   const customPreviewCss = `
@@ -665,21 +607,6 @@ export default function Step1(props: Step1Props) {
                   </>
                 ),
               },
-              {
-                key: 'tech',
-                label: 'Technical Audit of HTML Code 🏗️',
-                children: (
-                  <>
-                    <Button
-                      block
-                      onClick={handleTechnicalAudit}
-                      disabled={loadingAction === "technicalAudit"}
-                    >
-                      {loadingAction === "technicalAudit" ? <Spin /> : "Run Technical Audit"}
-                    </Button>
-                  </>
-                ),
-              },
             ]}
           />
 
@@ -761,51 +688,6 @@ export default function Step1(props: Step1Props) {
         content={content}
       />
 
-      {/* Modal Technical Audit => on y affiche les recommandations & le bouton "Apply" */}
-      <Modal
-        title="Technical Audit Report"
-        open={techAuditModalOpen}
-        onCancel={() => setTechAuditModalOpen(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setTechAuditModalOpen(false)}>
-            Cancel
-          </Button>,
-          <Button 
-            key="apply" 
-            type="primary" 
-            onClick={handleApplyTechnicalAudit}
-            disabled={loadingAction === "applyAudit"}
-          >
-            {loadingAction === "applyAudit" ? <Spin /> : "Apply Changes"}
-          </Button>
-        ]}
-      >
-        {techAuditRecommendations.length === 0 ? (
-          <p>No recommendations found.</p>
-        ) : (
-          <ul style={{ listStyleType: 'none', padding: 0 }}>
-            {techAuditRecommendations.map((rec, idx) => {
-              // Détermine la couleur en fonction de la priorité
-              const color = getPriorityColor(rec.priority);
-              return (
-                <li key={idx} style={{ marginBottom: '1rem' }}>
-                  <div>
-                    {/* Tag coloré */}
-                    <Tag color={color} style={{ fontWeight: 'bold' }}>
-                      {rec.priority}
-                    </Tag>
-                    {/* Titre du problème */}
-                    <span style={{ marginLeft: 6 }}>{rec.issue}</span>
-                  </div>
-                  <div style={{ marginLeft: 32, marginTop: 4 }}>
-                    <em>Suggestion:</em> {rec.recommendation}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Modal>
     </>
   );
 }

@@ -1,6 +1,10 @@
 // app/keyword-research/page.tsx or pages/keyword-research.tsx
 'use client'; // for Next.js 13 with App Router
 
+'use client';
+
+import { useTypewriter, Cursor } from 'react-simple-typewriter';
+
 import React, { useState } from 'react';
 import { Row, Col, Input, Button, Spin, message, Table } from 'antd';
 import { motion } from 'framer-motion';
@@ -18,15 +22,16 @@ export default function KeywordResearchPage() {
 
   const spinnerIcon = <LoadingOutlined style={{ fontSize: 28 }} spin />;
 
+
   const handleSearch = async () => {
-    if (!domain.trim()) {
+    if (!mainKeyword.trim()) {
       message.warning('Please enter a valid domain.');
       return;
     }
     setLoading(true);
     setKeywords([]);
     try {
-      const data = await fetchDomain(domain);
+      const data = await fetchKeywords(mainKeyword);
       setKeywords(data);
     } catch (error: any) {
       message.error(error.message || 'Error fetching domain');
@@ -93,8 +98,8 @@ export default function KeywordResearchPage() {
           <div style={{ marginBottom: 24 }}>
             <Input
               placeholder="Enter your domain"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
+              value={mainKeyword}
+              onChange={(e) => setMainKeyword(e.target.value)}
               style={{ maxWidth: 400, marginRight: 8 }}
             />
             <Button type="primary" onClick={handleSearch}>

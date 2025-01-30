@@ -967,7 +967,7 @@ def demo_kwd_research_from_domain(site_url: str) -> Dict[str, List[BrodAIKeyword
             prompt=prompt,
         )
         main_kw = summary
-
+        print(main_kw)
         researcher = KeywordResearcher(main_keyword=main_kw)
         top_keywords = researcher.get_top_keywords()
 

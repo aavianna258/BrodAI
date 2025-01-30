@@ -7,11 +7,10 @@ export interface IBrodAIKeyword {
 
 
   
-  export async function fetchKeywords(mainKeyword: string): Promise<IBrodAIKeyword[]> {
-    const response = await fetch('https://test-deploy-cpho.onrender.com/keyword_research', {
+  export async function fetchKeywords(url: string): Promise<IBrodAIKeyword[]> {
+    const response = await fetch('http://localhost:8000/summarize_site?site_url='+url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ main_keyword: mainKeyword }),
+      headers: { 'Content-Type': 'application/json' }
     });
     if (!response.ok) {
       throw new Error('Failed to fetch keyword data');
@@ -21,7 +20,7 @@ export interface IBrodAIKeyword {
   }
 
   export async function fetchDomain(mainDomain: string): Promise<IBrodAIKeyword[]> {
-    const response = await fetch('localhost:8000/domain_to_keywords', {
+    const response = await fetch('localhost:8000/summarize_site', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ domain: mainDomain }),
