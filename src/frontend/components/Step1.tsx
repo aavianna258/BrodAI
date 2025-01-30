@@ -530,14 +530,14 @@ const handleApplyImages = async () => {
                   <>
                     <Radio.Group
                       onChange={(e) => setImageStrategy(e.target.value)}
-                      value={imageStrategy}
+                      value={"aiGenerated"}
                       style={{ marginBottom: '0.5rem' }}
                     >
-                      <Radio value="ownURL">Mes propres URLs</Radio>
+                      <Radio value="ownURL" disabled={true}>Mes propres URLs</Radio>
                       <Radio value="aiGenerated">Générer avec l'IA</Radio>
                     </Radio.Group>
 
-                    {imageStrategy === 'ownURL' && (
+                    {/* {imageStrategy === 'ownURL' && (
                       <div style={{ marginLeft: '0.5rem', marginBottom: '1rem' }}>
                         <p>Combien d'images? (1 to 5)</p>
                         <Input
@@ -550,25 +550,8 @@ const handleApplyImages = async () => {
                             setImageCount(val);
                           }}
                         />
-                        {Array.from({ length: imageCount }).map((_, i) => (
-                          <div key={i} style={{ marginTop: '0.5rem' }}>
-                            <p><strong>Image URL #{i + 1}</strong></p>
-                            <Input
-                              placeholder="https://example.com/image.jpg"
-                              value={images[i]?.urlOrPrompt || ''}
-                              onChange={(ev) => {
-                                const arr = [...images];
-                                arr[i] = { urlOrPrompt: ev.target.value };
-                                setImages(arr);
-                              }}
-                            />
-                          </div>
-                        ))}
                       </div>
-                    )}
-                    {imageStrategy === 'brodAi' && (
-                      <p>(Exemple) BrodAI choisit des images (placeholder)</p>
-                    )}
+                    )} */}
                     {imageStrategy === 'aiGenerated' && (
                       <p>Indiquer le(s) prompt(s) de génération d'image, si besoin</p>
                     )}
@@ -576,9 +559,9 @@ const handleApplyImages = async () => {
                     <Button 
                       block 
                       onClick={handleInsertImage} 
-                      disabled={loadingAction === "images"}
+                      disabled={loadingAction === "image"}
                     >
-                      {loadingAction === "images" ? <Spin /> : "Insert Images"}
+                      {loadingAction === "image" ? <Spin /> : "Insert Images"}
                     </Button>
                   </>
                 ),
@@ -613,13 +596,6 @@ const handleApplyImages = async () => {
                 label: 'Link Building 🌐',
                 children: (
                   <>
-                    <p><strong>Website URL:</strong></p>
-                    <Input
-                      placeholder="https://mysite.com"
-                      value={siteUrl}
-                      onChange={(e) => setSiteUrl(e.target.value)}
-                      style={{ marginBottom: '0.5rem' }}
-                    />
                     <Button
                       block
                       onClick={handleInternalLink}

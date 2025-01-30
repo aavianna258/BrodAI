@@ -214,10 +214,11 @@ def generate_article(payload: KeywordRequest):
     prompt = (
         f"Tu es un expert SEO. "
         f"Rédige un court article en ciblant le mot-clé : {keyword}. "
-        f"La langue du titre et de l'article doit correspondre à la langue du mot-clé."
-        f"L'article doit respecter les recommendations E-E-A-T de google et doit etre riche avec minimum 3000 mots."
-        f"Il doit traiter tout les questions et les angles en relation avec le mot-clé :"
         f"renvoie juste le contenu de l'article en code html dans une balise <div> sans markdown ou texte supplémentaire"
+        f"N'incluez pas de titre mais faites des introductions et des sous-titres pour les différentes sections de l'article."
+        f"La langue du titre et de l'article doit correspondre à la langue du mot-clé."
+        f"L'article doit respecter les recommendations E-E-A-T de google et doit etre riche avec 2000 mots plus ou moins."
+        f"Il doit traiter tout les questions et les angles en relation avec le mot-clé :"
         f"le contenu va etre utilisé dans la section content des blog posts shopify c'est pour ça que ça doit rentrer dans une balise div et sans balise h1 ( qui est résérvé pour le titre)"
     )
 
@@ -333,9 +334,9 @@ def external_link_building(payload: ExternalLinkBuildingRequest):
         f"Inclus des liens externes vers des sites d'autorité (en français). "
         f"N'ajoute pas d'explications. Retourne le contenu final HTML "
         f"avec les balises <a href='...'></a> insérées où c'est pertinent.\n"
+        f"Aussi, formattes les liens comme un hyperlink classique: souslignés et en bleu."
         f"Renvoie juste le contenu de l'article en code html dans une balise <div> sans markdown ou texte supplémentaire"
         f"Ne rajoute pas d'explications, seulement le contenu final."
-        f"Aussi, formattes les liens comme un hyperlink classique: souslignés et en bleu."
     )
 
     try:
@@ -436,12 +437,13 @@ def insert_ctas(payload: InsertCTAsRequest):
             f"Insère {cta_count} CTA (boutons), "
             f"avec un design très moderne et il doit etre centré,"
             f"où c'est pertinent, en utilisant une balise <div>"
-            f" ou similaire. Ne renvoie que le HTML final.\n"
+            f" ou similaire. Le CTAs doivent être placés la où c'est logique, pas forcémment à la fin de l'article."
+            f"Ne renvoie que le HTML final sans les démarcations ```html ... ```.\n"
         )
         try:
             updated_content = openai_client.call_api(
                 api_type="text",
-                model="o1-mini",
+                model="gpt-4o",
                 prompt=prompt,
             )
         except Exception as e:
@@ -463,7 +465,7 @@ def insert_ctas(payload: InsertCTAsRequest):
         try:
             updated_content = openai_client.call_api(
                 api_type="text",
-                model="o1-mini",
+                model="gpt-4o",
                 prompt=prompt,
             )
         except Exception as e:
@@ -498,15 +500,26 @@ def apply_image(payload: ApplyImageRequest):
         image_url = openai_client.call_api(
             api_type="image", model="dall-e-3", prompt=prompt
         )
-        print(image_url)
+
+        # Insert the generated image into the HTML content
+        image_html = (
+            f"\n<img src='{image_url}' alt='AI-generated image' style='width: 400px; height: 400px;' />\n"
+        )
+        
+        html_update_prompt = (
+            f"\nHere is an article's HTML: {content}. "
+            f"Place this image's HTML in the article content: {image_html} "
+            f"Return only the updated HTML content, no human-like answer."
+        )
+        updated_content = openai_client.call_api(
+            api_type="text", model="o1-mini", 
+            prompt=html_update_prompt
+        )
     except Exception:
         # If there's an error, optionally fall back to a placeholder image
         image_url = "https://via.placeholder.com/600?text=Error+Image"
 
-    # Insert the generated image into the HTML content
-    updated_content = (
-        f"\n<img src='{image_url}' alt='AI-generated image' />\n" + content
-    )
+
     return {"updated_content": updated_content}
 
 
