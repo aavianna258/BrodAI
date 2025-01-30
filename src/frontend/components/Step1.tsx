@@ -157,6 +157,34 @@ export default function Step1(props: Step1Props) {
     }
   };
 
+  const handleInsertImage = async () => {
+    try {
+      setLoadingAction("image");
+      const resp = await fetch("http://localhost:8000/applyImage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!resp.ok) {
+        throw new Error("Server error on /applyImage");
+      }
+
+      const data = await resp.json();
+      if (data.updated_content) {
+        setContent(data.updated_content);
+        message.success("Image insérée !");
+      } else {
+        message.error("Erreur lors de l'insertion de l'image");
+      }
+    } catch (e) {
+      console.error(e);
+      message.error("Impossible d'insérer l'image.");
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+
   const handleInsertCTAs = async () => {
     try {
       setLoadingAction("cta");
@@ -189,39 +217,41 @@ export default function Step1(props: Step1Props) {
     }
   };
 
-  const handleApplyImages = async () => {
-    try {
-      setLoadingAction("images");
-      // On construit un tableau simple de strings (urlOrPrompt)
-      const arrOfImages = images.map((imgObj) => imgObj.urlOrPrompt);
+const handleApplyImages = async () => {
+  try {
+    setLoadingAction("images");
+    
+    // We only need to send content, an imageStrategy, and imageCount = 1.
+    // 'images' can be an empty array (or omitted entirely if you adjust the backend).
+    const resp = await fetch("http://localhost:8000/applyImages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content,         // Full article content
+        imageStrategy,   // should be set to "aiGenerated"
+        imageCount: 1,
+        images: [],      // We don't have any user prompts
+      }),
+    });
 
-      const resp = await fetch("http://localhost:8000/applyImages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content,
-          imageStrategy,
-          imageCount,
-          images: arrOfImages,
-        }),
-      });
-      if (!resp.ok) {
-        throw new Error("Server error on /applyImages");
-      }
-      const data = await resp.json();
-      if (data.updated_content) {
-        setContent(data.updated_content);
-        message.success("Images insérées !");
-      } else {
-        message.error("Erreur lors de l'insertion des images");
-      }
-    } catch (e) {
-      console.error(e);
-      message.error("Impossible d'insérer les images.");
-    } finally {
-      setLoadingAction(null);
+    if (!resp.ok) {
+      throw new Error("Server error on /applyImages");
     }
-  };
+
+    const data = await resp.json();
+    if (data.updated_content) {
+      setContent(data.updated_content);
+      message.success("Image insérée !");
+    } else {
+      message.error("Erreur lors de l'insertion de l'image");
+    }
+  } catch (e) {
+    console.error(e);
+    message.error("Impossible d'insérer l'image.");
+  } finally {
+    setLoadingAction(null);
+  }
+};
 
   const handleCustomAsset = async () => {
     if (!customAssetPrompt) {
@@ -233,14 +263,18 @@ export default function Step1(props: Step1Props) {
       const resp = await fetch("http://localhost:8000/insertCustomAsset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: customAssetPrompt }),
+        body: JSON.stringify({ 
+          // We now send both the prompt AND the content
+          prompt: customAssetPrompt,
+          content: content,
+        }),
       });
       if (!resp.ok) {
         throw new Error("Server error on /insertCustomAsset");
       }
       const data = await resp.json();
       if (data.asset_html) {
-        // On concatène au contenu
+        // On concatène l'asset HTML au contenu existant
         setContent((prev) => prev + "\n" + data.asset_html);
         message.success("Asset inséré !");
       } else {
@@ -253,6 +287,7 @@ export default function Step1(props: Step1Props) {
       setLoadingAction(null);
     }
   };
+  
 
   const handleExternalLink = async () => {
     try {
@@ -502,7 +537,6 @@ export default function Step1(props: Step1Props) {
                       style={{ marginBottom: '0.5rem' }}
                     >
                       <Radio value="ownURL">Mes propres URLs</Radio>
-                      <Radio value="brodAi">BrodAI picks images</Radio>
                       <Radio value="aiGenerated">Générer avec l'IA</Radio>
                     </Radio.Group>
 
@@ -544,7 +578,7 @@ export default function Step1(props: Step1Props) {
 
                     <Button 
                       block 
-                      onClick={handleApplyImages} 
+                      onClick={handleInsertImage} 
                       disabled={loadingAction === "images"}
                     >
                       {loadingAction === "images" ? <Spin /> : "Insert Images"}

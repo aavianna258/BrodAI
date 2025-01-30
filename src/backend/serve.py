@@ -248,6 +248,7 @@ def generate_article(payload: KeywordRequest):
 # ----------------------------------------------------------------------------------------
 class CustomAssetRequest(BaseModel):
     prompt: str
+    content : str
 
 
 @app.post("/insertCustomAsset")
@@ -256,9 +257,11 @@ def insert_custom_asset(payload: CustomAssetRequest):
     Reçoit un prompt décrivant un "custom/interactive asset".
     Ex: "Créer un simulateur de prix e-commerce en HTML".
     Appelle l'API OpenAI pour récupérer du code HTML.
-    On renvoie uniquement la balise <div> (ou tout le HTML, selon le besoin).
+    On renvoie uniquement la balise <div>.
     """
     prompt = payload.prompt.strip()
+    article_content = payload.content.strip()
+
     if not prompt:
         raise HTTPException(status_code=400, detail="Missing prompt for custom asset")
 
@@ -270,6 +273,7 @@ def insert_custom_asset(payload: CustomAssetRequest):
     full_prompt = (
         f"Tu es un assistant qui génère du code HTML pour un asset interactif.\n"
         f"Voici la demande : {prompt}.\n"
+        f"Voici le contenu de l'article : {article_content}\n"
         f"Retourne uniquement du code HTML, sans aucune explication.\n"
         f"Dans ce code HTML, mets le tout dans une balise <div>.\n"
     )
@@ -428,9 +432,9 @@ def insert_ctas(payload: InsertCTAsRequest):
         openai_client = OpenAIClient()
         prompt = (
             f"Voici un article HTML:\n{content}\n\n"
-            f"Insère {cta_count} CTA (boutons) en français, "
+            f"Insère {cta_count} CTA (boutons), "
             f"avec un design très moderne et il doit etre centré,"
-            f"où c'est pertinent, en utilisant une balise <div class='cta-button'>"
+            f"où c'est pertinent, en utilisant une balise <div>"
             f" ou similaire. Ne renvoie que le HTML final.\n"
         )
         try:
@@ -452,6 +456,44 @@ def insert_ctas(payload: InsertCTAsRequest):
             updated_content += f"\n<div class='cta-button'>{cta_text}</div>\n"
 
     return {"updated_content": updated_content}
+
+
+class ApplyImageRequest(BaseModel):
+    content: str
+
+@app.post("/applyImage")
+def apply_image(payload: ApplyImageRequest):
+    """
+    Generate exactly ONE AI-based image and insert it into the article's HTML.
+    """
+    content = payload.content.strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="No content provided.")
+
+    openai_client = OpenAIClient()
+    
+    truncated_content=content[:500]
+    # Build a simple prompt referencing the article content
+    prompt = (
+        f"Here is the a part of the text from an article content:\n\n{truncated_content}\n\n"
+        f"Generate a minimalistic  image for illustration for, it has to be simple without human in the image, make it simple "
+    )
+
+    try:
+        image_url = openai_client.call_api(
+            api_type="image",
+            model="dall-e-3",
+            prompt=prompt
+        )
+        print(image_url)
+    except Exception as e:
+        # If there's an error, optionally fall back to a placeholder image
+        image_url = "https://via.placeholder.com/600?text=Error+Image"
+
+    # Insert the generated image into the HTML content
+    updated_content = f"\n<img src='{image_url}' alt='AI-generated image' />\n" + content
+    return {"updated_content": updated_content}
+
 
 
 ########################################
@@ -480,7 +522,7 @@ def apply_images(payload: ApplyImagesRequest):
         # On insère les URLs fournies directement dans le HTML
         updated_content = content
         for url in payload.images:
-            updated_content += f"\n<img src='{url}' alt='Image' />\n"
+            updated_content += f"\n<img src='{url}' alt='Image' style='width: 300px; height: 200px;'  />\n"
 
     elif payload.imageStrategy == "brodAi":
         # (Exemple à adapter) => simple placeholder
@@ -488,29 +530,35 @@ def apply_images(payload: ApplyImagesRequest):
         # en fonction du sujet. Ici on fait juste un placeholder.
         updated_content = content
         for i in range(payload.imageCount):
-            updated_content += f"\n<img src='https://via.placeholder.com/600?text=BrodAI+Image#{i+1}' alt='BrodAI image' />\n"
+            updated_content += f"\n<img src='https://via.placeholder.com/600?text=BrodAI+Image#{i+1}' alt='BrodAI image' style='width: 300px; height: 200px;'   />\n"
 
     elif payload.imageStrategy == "aiGenerated":
-        # Ex: on appelle OpenAI DALL-E / Stable Diffusion, etc.
-        # On suppose que "images" contient des prompts, on génère des URLs.
-        # NB: la classe OpenAIClient devrait avoir une méthode pour générer des images (à implémenter).
+        # We generate exactly ONE image from the article content
         openai_client = OpenAIClient()
-        updated_content = content
-        for prompt in payload.images:
-            try:
-                image_url = openai_client.call_api(
-                    api_type="image", model="dall-e-3", prompt=prompt
-                )
-                # On suppose que call_api(..., api_type="images") renvoie directement un url
-                updated_content += f"\n<img src='{image_url}' alt='{prompt}' />\n"
-            except Exception:
-                # En cas d'erreur, on insère un fallback
-                updated_content += "\n<img src='https://via.placeholder.com/600?text=Error+Image' alt='Error' />\n"
+        try:
+            # Combine the entire article content into one prompt
+            prompt = (
+                f"Here is the article content:\n\n{content}\n\n"
+                "Generate a single relevant image."
+            )
+            # Call your custom method that returns a single image URL
+            image_url = openai_client.call_api(
+                api_type="image",
+                model="dall-e-3",  # or whichever model
+                prompt=prompt
+            )
+            # Insert the generated image into the updated content
+            updated_content += f"\n<img src='{image_url}' alt='AI-generated image' style='width: 300px; height: 200px;' />\n"
+        except Exception:
+            updated_content += (
+                "\n<img src='https://via.placeholder.com/600?text=Error+Image'  "
+                "alt='Error generating image' />\n"
+            )
     else:
-        updated_content = content
+        # If no recognized strategy, just return the content unchanged
+        pass
 
     return {"updated_content": updated_content}
-
 
 class TechnicalAuditRequest(BaseModel):
     store: Optional[str] = None
