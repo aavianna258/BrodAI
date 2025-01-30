@@ -248,7 +248,7 @@ def generate_article(payload: KeywordRequest):
 # ----------------------------------------------------------------------------------------
 class CustomAssetRequest(BaseModel):
     prompt: str
-    content : str
+    content: str
 
 
 @app.post("/insertCustomAsset")
@@ -272,7 +272,7 @@ def insert_custom_asset(payload: CustomAssetRequest):
     # On demande explicitement : "retourne moi UNIQUEMENT du code HTML. Pas de texte supplémentaire."
     full_prompt = (
         f"Tu es un assistant qui génère du code HTML pour un asset interactif.\n"
-        f"Voici la description de l'asset : {prompt}.\n"    
+        f"Voici la description de l'asset : {prompt}.\n"
         f"Voici le contenu de l'article : {article_content}\n"
         f"Insére cet asset dans le contenu de l'article de façon logique.\n"
         f"Retourne uniquement du code HTML du résultat, sans aucune explication.\n"
@@ -462,6 +462,7 @@ def insert_ctas(payload: InsertCTAsRequest):
 class ApplyImageRequest(BaseModel):
     content: str
 
+
 @app.post("/applyImage")
 def apply_image(payload: ApplyImageRequest):
     """
@@ -472,8 +473,8 @@ def apply_image(payload: ApplyImageRequest):
         raise HTTPException(status_code=400, detail="No content provided.")
 
     openai_client = OpenAIClient()
-    
-    truncated_content=content[:500]
+
+    truncated_content = content[:500]
     # Build a simple prompt referencing the article content
     prompt = (
         f"Here is the a part of the text from an article content:\n\n{truncated_content}\n\n"
@@ -482,19 +483,18 @@ def apply_image(payload: ApplyImageRequest):
 
     try:
         image_url = openai_client.call_api(
-            api_type="image",
-            model="dall-e-3",
-            prompt=prompt
+            api_type="image", model="dall-e-3", prompt=prompt
         )
         print(image_url)
-    except Exception as e:
+    except Exception:
         # If there's an error, optionally fall back to a placeholder image
         image_url = "https://via.placeholder.com/600?text=Error+Image"
 
     # Insert the generated image into the HTML content
-    updated_content = f"\n<img src='{image_url}' alt='AI-generated image' />\n" + content
+    updated_content = (
+        f"\n<img src='{image_url}' alt='AI-generated image' />\n" + content
+    )
     return {"updated_content": updated_content}
-
 
 
 ########################################
@@ -546,7 +546,7 @@ def apply_images(payload: ApplyImagesRequest):
             image_url = openai_client.call_api(
                 api_type="image",
                 model="dall-e-3",  # or whichever model
-                prompt=prompt
+                prompt=prompt,
             )
             # Insert the generated image into the updated content
             updated_content += f"\n<img src='{image_url}' alt='AI-generated image' style='width: 300px; height: 200px;' />\n"
@@ -560,6 +560,7 @@ def apply_images(payload: ApplyImagesRequest):
         pass
 
     return {"updated_content": updated_content}
+
 
 class TechnicalAuditRequest(BaseModel):
     store: Optional[str] = None
