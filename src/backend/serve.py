@@ -946,3 +946,26 @@ def generate_keywords(payload: DomainRequest):
 
     keywords = ["chaussures de randonnée", "conseils trekking", "réparation de chaussures"]
     return keywords
+
+
+@app.post("/summarize_site")
+def summarize_site_content_for_demo(site_url: str) -> Dict[str, Dict[str, str] | int]:
+    try:
+        # 1) Extract h1/h2, meta_title, meta_description
+        scraped_info = extract_website_info(site_url)
+
+        ai_client = OpenAIClient()
+        prompt = (
+            f"Summarize the content of this website in a passage of a maximum of 10 words. "
+            f"Just give me the passage please. Here is some info about the site: {scraped_info}."
+        )
+
+        summary = ai_client.call_api(
+            api_type="text",
+            model="o1-mini",
+            prompt=prompt,
+        )
+        
+        return {"status": 200, "data": { "summary": summary} } 
+    except Exception as e:
+        return {"status": 500, "data": {"error": str(e)}}
