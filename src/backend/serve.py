@@ -451,10 +451,23 @@ def insert_ctas(payload: InsertCTAsRequest):
     else:
         # On peut, par exemple, ajouter chaque CTA à la fin d'un paragraphe,
         # ou tout simplement coller en bas de l'article. Exemple simplifié:
-        updated_content = content
-        for cta_text in payload.ctaValues:
-            # Ex. on insère un petit HTML
-            updated_content += f"\n<div class='cta-button'>{cta_text}</div>\n"
+        openai_client = OpenAIClient()
+        cta=payload.ctaValues
+        prompt = (
+            f"Voici un article HTML:\n{content}\n\n"
+            f"Insère cette list de cta {cta} CTA (boutons), "
+            f"avec un design très moderne et il doit etre centré,"
+            f"où c'est pertinent, en utilisant une balise <div>"
+            f" ou similaire. Ne renvoie que le HTML final.\n"
+        )
+        try:
+            updated_content = openai_client.call_api(
+                api_type="text",
+                model="o1-mini",
+                prompt=prompt,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
     return {"updated_content": updated_content}
 
