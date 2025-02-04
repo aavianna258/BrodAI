@@ -4,6 +4,11 @@
 scripts/test.py
 scripts/shopify_test.py
 out.json
+src/frontend/.next/
+src/frontend/node_modules/
+src/frontend/next-env.d.ts
+.env.local
+.env.production
 
 ##########################  DEFAULT FROM GITHUB ##################################
 # Byte-compiled / optimized / DLL files
