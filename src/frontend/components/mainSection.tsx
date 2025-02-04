@@ -1,60 +1,92 @@
-'use client';
+// "use client";
 
-import { Typography } from "antd";
+import React, { useState } from "react";
+import Button from "@mui/material/Button";
+import Container from "@mui/material/Container";
+import InputLabel from "@mui/material/InputLabel";
+import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import visuallyHidden from "@mui/utils/visuallyHidden";
 import { motion } from "framer-motion";
-import React from "react";
-import { Cursor, useTypewriter } from "react-simple-typewriter";
+import TypewriterTitle from "./TypewriterTitle";
+import DomainSearchBar from "./DomainSearchBar";
+import { fetchKeywords, IBrodAIKeyword } from "./backendEndpoints";
+import { Alert, AlertColor, Snackbar } from "@mui/material";
 
 const MainSection = () => {
-    const [typewriterText] = useTypewriter({
-        words: [
-            "A 24/7 SEO Consultant...",
-            "Daily Site Audits & Error Fixes...",
-            "Trend Research & Fresh Content...",
-            "Link Building & Publications...",
-        ],
-        loop: 0,
-        typeSpeed: 60,
-        deleteSpeed: 50,
-        delaySpeed: 1200,
-    });
+    const [searchKeyword, setSearchKeyword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [keywords, setKeywords] = useState<IBrodAIKeyword[]>([]);
     
+    // Snackbar state
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
+    const [snackbarSeverity, setSnackbarSeverity] = useState<AlertColor>("success");
+  
+    const handleSnackbarClose = (
+      event?: React.SyntheticEvent | Event,
+      reason?: string
+    ) => {
+      if (reason === "clickaway") {
+        return;
+      }
+      setSnackbarOpen(false);
+    };
+  
+    // Helper function to show the Snackbar
+    const showSnackbar = (message: string, severity: AlertColor) => {
+      setSnackbarMessage(message);
+      setSnackbarSeverity(severity);
+      setSnackbarOpen(true);
+    };
+    
+    const handleSearch = async () => {
+        if (!searchKeyword.trim()) {
+            showSnackbar("Please enter a valid domain.", "warning");
+            return;
+        }
+        setLoading(true);
+        setKeywords([]);
+        try {
+            const data = await fetchKeywords(searchKeyword);
+            setKeywords(data);
+        } catch (error: any) {
+            showSnackbar(error.message || "Error fetching domain", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        <div className="content-center text-center">
-            {" "}
-            <motion.h1
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7 }}
-                style={{
-                    fontSize: "2rem",
-                    color: "#2563EB",
-                    marginBottom: "16px",
-                    fontWeight: "bold",
-                }}
+        <Container
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                pt: { xs: 14, sm: 20 },
+                pb: { xs: 8, sm: 12 },
+            }}
+        >
+            <TypewriterTitle />
+            <DomainSearchBar handleSearch={handleSearch} searchText={searchKeyword} loading={loading} setSearchText={setSearchKeyword} />
+            {/* Snackbar for warnings/errors */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={handleSnackbarClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             >
-                BrodAI:
-                <span style={{ marginLeft: 8 }}>{typewriterText}</span>
-                <Cursor cursorColor="#2563EB" />
-            </motion.h1>
-            <motion.h2
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.9 }}
-                style={{
-                    color: "#555",
-                    marginBottom: 24,
-                    fontSize: "1.15rem",
-                    maxWidth: 800,
-                    margin: "0 auto",
-                    lineHeight: 1.5,
-                }}
-            >
-                BrodAI is your <strong>24/7</strong> SEO consultant. Every day,
-                it audits your site, fixes errors, researches{" "}
-                <strong>trending keywords</strong>, and publishes new articles.
-            </motion.h2>
-        </div>
+                <Alert
+                    onClose={handleSnackbarClose}
+                    severity={snackbarSeverity}
+                    sx={{ width: "100%" }}
+                >
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
+        </Container>
     );
 };
 

@@ -1,44 +1,55 @@
 import React, { useState } from "react";
+import Button from "@mui/material/Button";
+import InputLabel from "@mui/material/InputLabel";
+import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { Box } from "@mui/material";
+import Snackbar from "@mui/material/Snackbar";
+import Alert, { AlertColor } from "@mui/material/Alert";
+import { fetchKeywords, IBrodAIKeyword } from "./backendEndpoints";
 
-const domainSearchBar = () => {
-    const [mainKeyword, setMainKeyword] = useState("");
-    const [loading, setLoading] = useState(false);
+interface SearchBarProps {
+    loading: boolean;
+    searchText: string;
+    setSearchText: (newText: string) => void;
+    handleSearch: () => void;
+}
 
-    // Existing handler for the table
-    const handleSearch = async () => {
-        if (!mainKeyword.trim()) {
-            message.warning("Please enter a valid domain.");
-            return;
-        }
-        setLoading(true);
-        setKeywords([]);
-        try {
-            const data = await fetchKeywords(mainKeyword);
-            setKeywords(data);
-        } catch (error: any) {
-            message.error(error.message || "Error fetching domain");
-        } finally {
-            setLoading(false);
-        }
-    };
+const DomainSearchBar = ({loading, searchText, setSearchText, handleSearch}: SearchBarProps) => {
+  return (
+    <Box sx={{ alignItems: "center", width: 500 }}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1}
+        useFlexGap
+        sx={{ pt: 2, width: { xs: "100%", sm: "350px" } }}
+      >
+        <TextField
+          variant="outlined"
+          label="Enter your domain"
+          placeholder="https://www.brod-ai.com"
+          size="small"
+          value={searchText}
+          fullWidth
+          onChange={(e) => setSearchText(e.target.value)}
+          sx={{ bgcolor: "white" }}
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          size="small"
+          sx={{ minWidth: "fit-content" }}
+          onClick={handleSearch}
+          disabled={loading}
+        >
+          Search
+        </Button>
+      </Stack>
 
-    return (
-        <>
-            <Row justify="center" style={{ marginBottom: 24 }}>
-                <Col xs={24} sm={20} md={14} lg={12}>
-                    <Input
-                        placeholder="Enter your domain"
-                        value={mainKeyword}
-                        onChange={(e) => setMainKeyword(e.target.value)}
-                        style={{ maxWidth: 400, marginRight: 8 }}
-                    />
-                    <Button type="primary" onClick={handleSearch}>
-                        Search
-                    </Button>
-                </Col>
-            </Row>
-        </>
-    );
+    </Box>
+  );
 };
 
-export default domainSearchBar;
+export default DomainSearchBar;

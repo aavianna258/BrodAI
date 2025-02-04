@@ -1,16 +1,17 @@
-// app/keyword-research/page.tsx or pages/keyword-research.tsx
-
-"use client"; // for Next.js 13 with App Router
+"use client";
 
 import React, { useState } from "react";
 import { Row, Col, Input, Button, Spin, message, Table } from "antd";
 import { motion } from "framer-motion";
 import { LoadingOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
-
-
 import { fetchKeywords, IBrodAIKeyword } from "@/components/backendEndpoints";
-import MainSection from "@/components/mainSection";
+import MainSection from "@/components/MainSection";
+// Import fonts for Material UI components
+import "@fontsource/roboto/300.css";
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/700.css";
 
 export default function KeywordResearchPage() {
     const [mainKeyword, setMainKeyword] = useState("");
