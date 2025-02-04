@@ -1,14 +1,16 @@
 from typing import Any, Dict, List
+from packages.utils.openai import OpenAIClient
 from src.packages.seo_analyzer.seo_analyzer import SeoAnalyzer
 from httpx import RequestError
 from pydantic import BaseModel
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from requests import RequestException
 #from packages.product_pages.product_page_optimiser import ProductPageOptimiser
 from src.packages.config.brodai_global_classes import BrodAIKeyword
 from src.packages.keyword_research.keyword_research import KeywordResearcher
 from dotenv import load_dotenv
+from src.packages.utils.webpage_scrapper import WebpageScrapper
 import os
 
 load_dotenv()
@@ -151,3 +153,76 @@ def analyze_domain(payload: AnalysisRequest):
             status=500,
             data={"error": f"Failed to analyze domain: {str(e)}"}
         )
+
+
+@app.post("/summarize_site")
+def demo_kwd_research_from_domain(site_url: str) -> Dict[str, List[BrodAIKeyword]]:
+    try:
+        # 1) Extract h1/h2, meta_title, meta_description
+        scraped_info = WebpageScrapper(site_url).extract_website_info()
+
+        ai_client = OpenAIClient()
+        prompt = (
+            f"Summarize the content of this website in a passage of a maximum of 10 words. "
+            f"Just give me the passage please. Here is some info about the site: {scraped_info}."
+        )
+        summary = ai_client.call_api(
+            api_type="text",
+            model="o1-mini",
+            prompt=prompt,
+        )
+        main_kw = summary
+        print(main_kw)
+        researcher = KeywordResearcher(main_keyword=main_kw)
+        top_keywords = researcher.get_top_keywords()
+
+        return {"target_kw_report": top_keywords}
+
+    except Exception as e:
+        return {"status": 500, "data": {"error": str(e)}}
+    
+    
+@app.post("/generateArticle")
+def generate_article(payload: KeywordRequest):
+    """
+    Reçoit un mot-clé et génère un titre + contenu d'article via OpenAI.
+    """
+    keyword = payload.main_keyword
+    if not keyword:
+        raise HTTPException(status_code=400, detail="Missing 'keyword'")
+
+    # 1) Initialiser notre client OpenAI
+    openai_client = OpenAIClient()  # charge OPENAI_API_KEY depuis .env
+
+    # 2) Construire un prompt
+    prompt = (
+        f"Tu es un expert SEO. "
+        f"Rédige un court article en ciblant le mot-clé : {keyword}. "
+        f"renvoie juste le contenu de l'article en code html dans une balise <div> sans markdown ou texte supplémentaire"
+        f"N'incluez pas de titre mais faites des introductions et des sous-titres pour les différentes sections de l'article."
+        f"La langue du titre et de l'article doit correspondre à la langue du mot-clé."
+        f"L'article doit respecter les recommendations E-E-A-T de google et doit etre riche avec 2000 mots plus ou moins."
+        f"Il doit traiter tout les questions et les angles en relation avec le mot-clé :"
+        f"le contenu va etre utilisé dans la section content des blog posts shopify c'est pour ça que ça doit rentrer dans une balise div et sans balise h1 ( qui est résérvé pour le titre)"
+    )
+
+    # 3) Appel à l'API OpenAI (modèle chat) via call_api(..., api_type="text", ...)
+    #    NB: "gpt-3.5-turbo" ou "gpt-4" selon votre abonnement
+    #    Ajoutez d'autres paramètres (temperature, max_tokens...) si besoin
+    article_content = openai_client.call_api(
+        api_type="text",
+        model="o1-mini",
+        prompt=prompt,
+    )
+
+    # 4) Générer un titre succinct (option 1 : prompt séparé, option 2 : dans le même prompt)
+    #    Ici, on fait un prompt séparé pour illustrer.
+    title_prompt = f"Propose un titre SEO optimisé pour ce keyword : {keyword}. Renvoie que le titre sans texte ou explication supplémentaire et pas de formatage et pas de markdown juste le text brut"
+    article_title = openai_client.call_api(
+        api_type="text",
+        model="o1-mini",
+        prompt=title_prompt,
+    )
+
+    # 5) Retourner le titre et le contenu
+    return {"title": article_title, "content": article_content}

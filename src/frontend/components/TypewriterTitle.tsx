@@ -11,7 +11,6 @@ import { Box } from "@mui/material";
 const MainSection = () => {
     const [typewriterText] = useTypewriter({
         words: [
-            "A 24/7 SEO Consultant...",
             "Daily Site Audits & Error Fixes...",
             "Trend Research & Fresh Content...",
             "Link Building & Publications...",
@@ -28,8 +27,8 @@ const MainSection = () => {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                pt: { xs: 14, sm: 20 },
-                pb: { xs: 8, sm: 12 },
+                // pt: { xs: 14, sm: 20 },
+                // pb: { xs: 8, sm: 12 },
             }}
         >
             <Stack
@@ -49,56 +48,21 @@ const MainSection = () => {
                         fontSize: "clamp(3rem, 10vw, 3.5rem)",
                     }}
                 >
-                    BrodAI:
-                    <Typography
-                        component="span"
-                        variant="h1"
-                        sx={(theme) => ({
-                            fontSize: "inherit",
-                            color: "primary.main",
-                            ...theme.applyStyles("dark", {
-                                color: "primary.light",
-                            }),
-                        })}
-                    >
-                        <motion.h1
-                            initial={{ opacity: 0, y: -20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.7 }}
-                        >
-                            <span style={{ marginLeft: 8 }}>
-                                {typewriterText}
-                            </span>
-                            <Cursor cursorColor="#2563EB" />
-                        </motion.h1>
-                    </Typography>
+                    BrodAI&nbsp;
+                    <Box component="span" sx={{ color: "blue" }}>
+                        SEO Agent
+                    </Box>
                 </Typography>
-                <Box
-                    sx={{
-                        textAlign: "center",
-                        color: "text.secondary",
-                        width: { sm: "100%", md: "80%" },
-                    }}
-                >
-                    <motion.h2
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.9 }}
-                        style={{
-                            color: "#555",
-                            marginBottom: 24,
-                            fontSize: "1.15rem",
-                            maxWidth: 800,
-                            margin: "0 auto",
-                            lineHeight: 1.5,
-                        }}
-                    >
-                        BrodAI is your <strong>24/7</strong> SEO consultant.
+                <Typography sx={{ color: "grey.700" }}>
+                    {/* BrodAI is your <strong>24/7</strong> SEO consultant. */}
+                    BrodAI is your 24/7 SEO consultant for
+                    <strong> {typewriterText}</strong>
+                    <Cursor cursorColor="#2563EB" />
+                    {/* <br></br><br></br>
                         Every day, it audits your site, fixes errors, researches{" "}
                         <strong>trending keywords</strong>, and publishes new
-                        articles.
-                    </motion.h2>
-                </Box>
+                        articles. */}
+                </Typography>
             </Stack>
         </Container>
     );

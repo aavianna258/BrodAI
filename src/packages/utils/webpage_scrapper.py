@@ -1,9 +1,7 @@
-from typing import Any
+from typing import Any, Dict
 from urllib.request import urlopen
 from lxml import html
-from lxml.doctestcompare import (
-    LHTMLOutputChecker,
-)
+from lxml.doctestcompare import LHTMLOutputChecker
 
 
 class WebpageScrapper:
@@ -15,6 +13,8 @@ class WebpageScrapper:
             url (str): The URL of the webpage to scrape.
             **kwargs (dict): Optional keyword arguments for the HTML parser.
         """
+        if not url.startswith(('http://', 'https://')):
+            url = 'http://' + url
         self.url = url
         page = urlopen(self.url)
         if len(kwargs) > 0:
@@ -62,49 +62,46 @@ class WebpageScrapper:
         )
         return comparison_result
 
+    def extract_website_info(self) -> Dict[str, Any]:
+        """
+        Extracts website information from the HTML document.
+
+        Returns:
+            dict: A dictionary containing the following keys:
+                - title: The text content of the <title> element.
+                - meta_description: The content attribute of the <meta name="description"> element.
+                - h1_texts: A list of text contents of all <h1> elements.
+                - h2_texts: A list of text contents of all <h2> elements.
+        """
+        info = {}
+
+        # Extract <title>
+        title_elements = self.html_doc_root.xpath('//title/text()')
+        info["title"] = title_elements[0].strip() if title_elements else ""
+
+        # Extract <meta name="description">
+        meta_desc_elements = self.html_doc_root.xpath('//meta[@name="description"]/@content')
+        info["meta_description"] = meta_desc_elements[0].strip() if meta_desc_elements else ""
+
+        # Extract all <h1> texts
+        h1_elements = self.html_doc_root.xpath('//h1//text()')
+        h1_texts = [text.strip() for text in h1_elements if text.strip()]
+        info["h1_texts"] = h1_texts
+
+        # Extract all <h2> texts
+        h2_elements = self.html_doc_root.xpath('//h2//text()')
+        h2_texts = [text.strip() for text in h2_elements if text.strip()]
+        info["h2_texts"] = h2_texts
+
+        return info
+
     def get_url_content(self) -> str:
         """
-        Extracts the HTML content from the URL.
+        Returns the HTML content of the URL as a string.
 
         Returns:
             str: The HTML content of the URL.
         """
-        return ""
-
-
-"""
-About lxml.html.HTMLParser...
-
-Available boolean keyword arguments:
-- recover
-    - try hard to parse through broken HTML (default: True)
-- no_network         
-    - prevent network access for related files (default: True)
-- remove_blank_text  
-    - discard empty text nodes that are ignorable (i.e. not actual text content)
-- remove_comments   
-    - discard comments
-- remove_pis
-    - discard processing instructions
-- strip_cdata        
-    - replace CDATA sections by normal text content (default: True)
-- compact            
-    - save memory for short text content (default: True)
-- default_doctype    
-    - add a default doctype even if it is not found in the HTML (default: True)
-- collect_ids        
-    - use a hash table of XML IDs for fast access (default: True)
-- huge_tree          
-    - disable security restrictions and support very deep trees
-        and very long text content (only affects libxml2 2.7+)
-
-Other keyword arguments:
-- encoding 
-    - override the document encoding
-- target   
-    - a parser target object that will receive the parse events
-- schema   
-    - an XMLSchema to validate against
-        Note that you should avoid sharing parsers between threads 
-        for performance reasons.
-"""
+        # Convert the parsed HTML document back to a string.
+        html_string = html.tostring(self.html_doc_root, encoding="unicode", method="html")
+        return html_string

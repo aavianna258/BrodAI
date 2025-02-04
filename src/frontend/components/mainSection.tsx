@@ -12,36 +12,40 @@ import visuallyHidden from "@mui/utils/visuallyHidden";
 import { motion } from "framer-motion";
 import TypewriterTitle from "./TypewriterTitle";
 import DomainSearchBar from "./DomainSearchBar";
-import { fetchKeywords, IBrodAIKeyword } from "./backendEndpoints";
+import {
+    fetchKeywords,
+    IBrodAIKeyword,
+} from "./services/keywordResearchService";
 import { Alert, AlertColor, Snackbar } from "@mui/material";
 
 const MainSection = () => {
     const [searchKeyword, setSearchKeyword] = useState("");
     const [loading, setLoading] = useState(false);
     const [keywords, setKeywords] = useState<IBrodAIKeyword[]>([]);
-    
+
     // Snackbar state
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
-    const [snackbarSeverity, setSnackbarSeverity] = useState<AlertColor>("success");
-  
+    const [snackbarSeverity, setSnackbarSeverity] =
+        useState<AlertColor>("success");
+
     const handleSnackbarClose = (
-      event?: React.SyntheticEvent | Event,
-      reason?: string
+        event?: React.SyntheticEvent | Event,
+        reason?: string
     ) => {
-      if (reason === "clickaway") {
-        return;
-      }
-      setSnackbarOpen(false);
+        if (reason === "clickaway") {
+            return;
+        }
+        setSnackbarOpen(false);
     };
-  
+
     // Helper function to show the Snackbar
     const showSnackbar = (message: string, severity: AlertColor) => {
-      setSnackbarMessage(message);
-      setSnackbarSeverity(severity);
-      setSnackbarOpen(true);
+        setSnackbarMessage(message);
+        setSnackbarSeverity(severity);
+        setSnackbarOpen(true);
     };
-    
+
     const handleSearch = async () => {
         if (!searchKeyword.trim()) {
             showSnackbar("Please enter a valid domain.", "warning");
@@ -58,19 +62,25 @@ const MainSection = () => {
             setLoading(false);
         }
     };
-
     return (
-        <Container
+        <Stack
+            spacing={2}
+            direction={"column"}
             sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
+                // alignItems: "center",
                 pt: { xs: 14, sm: 20 },
                 pb: { xs: 8, sm: 12 },
+                justifyContent: "center",
+                alignItems: "center",
             }}
         >
             <TypewriterTitle />
-            <DomainSearchBar handleSearch={handleSearch} searchText={searchKeyword} loading={loading} setSearchText={setSearchKeyword} />
+            <DomainSearchBar
+                handleSearch={handleSearch}
+                searchText={searchKeyword}
+                loading={loading}
+                setSearchText={setSearchKeyword}
+            />
             {/* Snackbar for warnings/errors */}
             <Snackbar
                 open={snackbarOpen}
@@ -86,7 +96,7 @@ const MainSection = () => {
                     {snackbarMessage}
                 </Alert>
             </Snackbar>
-        </Container>
+        </Stack>
     );
 };
 
