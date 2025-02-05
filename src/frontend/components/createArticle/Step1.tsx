@@ -17,7 +17,6 @@ import CTASettingsPanel from './articleCreationPanels/CTASettingsPanel';
 import ImagesSettingsPanel from './articleCreationPanels/ImagesSettingsPanel';
 import CustomAssetPanel from './articleCreationPanels/CustomAssetPanel';
 import LinkBuildingPanel from './articleCreationPanels/LinkBuildingPanel';
-import { publishToShopify } from '../services/shopifyService';
 
 interface Step1Props {
   loading: boolean;

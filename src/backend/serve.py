@@ -226,3 +226,348 @@ def generate_article(payload: KeywordRequest):
 
     # 5) Retourner le titre et le contenu
     return {"title": article_title, "content": article_content}
+
+
+
+# ----------------------------------------------------------------------------------------
+# 1) INSERT CUSTOM ASSET
+# ----------------------------------------------------------------------------------------
+class CustomAssetRequest(BaseModel):
+    prompt: str
+    content: str
+
+
+@app.post("/insertCustomAsset")
+def insert_custom_asset(payload: CustomAssetRequest):
+    """
+    Reçoit un prompt décrivant un "custom/interactive asset".
+    Ex: "Créer un simulateur de prix e-commerce en HTML".
+    Appelle l'API OpenAI pour récupérer du code HTML.
+    On renvoie uniquement la balise <div>.
+    """
+    prompt = payload.prompt.strip()
+    article_content = payload.content.strip()
+
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Missing prompt for custom asset")
+
+    # On crée un client OpenAI (même usage que pour generateArticle)
+    openai_client = OpenAIClient()
+
+    # Prompt pour OpenAI (o1-mini) - adapter selon vos besoins
+    # On demande explicitement : "retourne moi UNIQUEMENT du code HTML. Pas de texte supplémentaire."
+    full_prompt = (
+        f"Tu es un assistant qui génère du code HTML pour un asset interactif.\n"
+        f"Voici la description de l'asset : {prompt}.\n"
+        f"Voici le contenu de l'article : {article_content}\n"
+        f"Insére cet asset dans le contenu de l'article de façon logique.\n"
+        f"Retourne uniquement du code HTML du résultat, sans aucune explication.\n"
+        f"Dans ce code HTML, mets le tout dans une balise <div>.\n"
+    )
+
+    try:
+        raw_html = openai_client.call_api(
+            api_type="text",
+            model="o1-mini",
+            prompt=full_prompt,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # 2) Extraire uniquement la balise <div> du résultat.
+    # Méthode simple : on cherche <div ...> ... </div>
+    # Vous pouvez utiliser un parseur HTML (ex. BeautifulSoup)
+    # Ici, solution minimaliste par regex
+    import re
+
+    matches = re.findall(r"(<div[\s\S]*?</div>)", raw_html, flags=re.IGNORECASE)
+    if matches:
+        # On prend le premier match
+        asset_div = matches[0]
+    else:
+        # Si rien trouvé, on renvoie tout
+        asset_div = raw_html
+
+    return {"asset_html": asset_div}
+
+
+# ----------------------------------------------------------------------------------------
+# 2) EXTERNAL LINK BUILDING
+# ----------------------------------------------------------------------------------------
+class ExternalLinkBuildingRequest(BaseModel):
+    content: str
+
+
+@app.post("/externalLinkBuilding")
+def external_link_building(payload: ExternalLinkBuildingRequest):
+    """
+    Reçoit le contenu de l'article (HTML ou Markdown, à vous de voir),
+    et demande à "o1-mini" d'insérer des liens externes de haute autorité.
+    Retourne le contenu modifié.
+    """
+    article_content = payload.content.strip()
+    if not article_content:
+        raise HTTPException(status_code=400, detail="Missing article content")
+
+    openai_client = OpenAIClient()
+
+    # Prompt : "insère des liens externes (avec <a href=...>) dans ce contenu"
+    # Adapter selon vos besoins de mise en forme.
+    link_prompt = (
+        f"Voici un contenu d'article:\n"
+        f"{article_content}\n\n"
+        f"Inclus des liens externes vers des sites d'autorité (en français). "
+        f"N'ajoute pas d'explications. Retourne le contenu final HTML "
+        f"avec les balises <a href='...'></a> insérées où c'est pertinent.\n"
+        f"Aussi, formattes les liens comme un hyperlink classique: souslignés et en bleu."
+        f"Renvoie juste le contenu de l'article en code html dans une balise <div> sans markdown ou texte supplémentaire"
+        f"Ne rajoute pas d'explications, seulement le contenu final."
+    )
+
+    try:
+        updated_content = openai_client.call_api(
+            api_type="text",
+            model="o1-mini",
+            prompt=link_prompt,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # On peut imaginer un "nettoyage" ou "sanitizing" ici
+    # updated_content = sanitize_html(updated_content) ...
+
+    return {"updated_content": updated_content}
+
+
+# ----------------------------------------------------------------------------------------
+# 3) RefineContent feature
+# ----------------------------------------------------------------------------------------
+
+
+class RefineContentRequest(BaseModel):
+    content: str
+    refine_instruction: str
+
+
+@app.post("/refineContent")
+def refine_content(payload: RefineContentRequest):
+    """
+    Receives the current content (HTML) and some "refine_instruction".
+    For example, "Make the tone more formal" or "Shorten the second paragraph" etc.
+    Returns updated content.
+    """
+    content = payload.content.strip()
+    instruction = payload.refine_instruction.strip()
+
+    if not content:
+        raise HTTPException(status_code=400, detail="Missing content for refinement")
+
+    if not instruction:
+        raise HTTPException(status_code=400, detail="Missing refine instruction")
+
+    # 1) Initialize OpenAI
+    openai_client = OpenAIClient()
+
+    # 2) Construct a prompt
+    # For example:
+    prompt = (
+        f"Voici le contenu HTML suivant:\n"
+        f"{content}\n\n"
+        f"Instruction de refinement: {instruction}\n\n"
+        f"Retourne le texte HTML modifié en respectant l'instruction. "
+        f"renvoie juste le contenu de l'article en code html dans une balise <div> sans markdown ou texte supplémentaire"
+        f"Ne rajoute pas d'explications, seulement le contenu final."
+    )
+
+    try:
+        refined_content = openai_client.call_api(
+            api_type="text",
+            model="o1-mini",
+            prompt=prompt,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"updated_content": refined_content}
+
+
+########################################
+# NOUVELLE ROUTE: /insertCTAs
+########################################
+class InsertCTAsRequest(BaseModel):
+    content: str
+    useBrodAiCTAs: bool
+    wantsCTA: bool
+    ctaCount: int
+    ctaValues: List[str]
+
+
+@app.post("/insertCTAs")
+def insert_ctas(payload: InsertCTAsRequest):
+    """
+    Insertion de CTA dans le contenu HTML.
+    - Si useBrodAiCTAs = True => on laisse GPT générer le(s) CTA
+    - Sinon on utilise la liste ctaValues pour injecter manuellement X CTA.
+    """
+    content = payload.content.strip()
+    cta_count = payload.ctaCount
+    if not content:
+        raise HTTPException(status_code=400, detail="Missing content")
+
+    # Cas 1: On laisse GPT "deviner" la/les CTA(s)
+    if payload.useBrodAiCTAs:
+        openai_client = OpenAIClient()
+        prompt = (
+            f"Voici un article HTML:\n{content}\n\n"
+            f"Insère {cta_count} CTA (boutons), "
+            f"avec un design très moderne et il doit etre centré,"
+            f"où c'est pertinent, en utilisant une balise <div>"
+            f" ou similaire. Le CTAs doivent être placés la où c'est logique, pas forcémment à la fin de l'article."
+            f"Ne renvoie que le HTML final sans les démarcations ```html ... ```.\n"
+        )
+        try:
+            updated_content = openai_client.call_api(
+                api_type="text",
+                model="gpt-4o",
+                prompt=prompt,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # Cas 2: On a un array ctaValues => On injecte ces CTA manuellement
+    else:
+        # On peut, par exemple, ajouter chaque CTA à la fin d'un paragraphe,
+        # ou tout simplement coller en bas de l'article. Exemple simplifié:
+        openai_client = OpenAIClient()
+        cta=payload.ctaValues
+        prompt = (
+            f"Voici un article HTML:\n{content}\n\n"
+            f"Insère cette list de cta {cta} CTA (boutons), "
+            f"avec un design très moderne et il doit etre centré,"
+            f"où c'est pertinent, en utilisant une balise <div>"
+            f" ou similaire. Ne renvoie que le HTML final.\n"
+        )
+        try:
+            updated_content = openai_client.call_api(
+                api_type="text",
+                model="gpt-4o",
+                prompt=prompt,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return {"updated_content": updated_content}
+
+
+class ApplyImageRequest(BaseModel):
+    content: str
+
+
+@app.post("/applyImage")
+def apply_image(payload: ApplyImageRequest):
+    """
+    Generate exactly ONE AI-based image and insert it into the article's HTML.
+    """
+    content = payload.content.strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="No content provided.")
+
+    openai_client = OpenAIClient()
+
+    truncated_content = content[:500]
+    # Build a simple prompt referencing the article content
+    prompt = (
+        f"Here is the a part of the text from an article content:\n\n{truncated_content}\n\n"
+        f"Generate a minimalistic  image for illustration for, it has to be simple without human in the image, make it simple "
+    )
+
+    try:
+        image_url = openai_client.call_api(
+            api_type="image", model="dall-e-3", prompt=prompt
+        )
+
+        # Insert the generated image into the HTML content
+        image_html = (
+            f"\n<img src='{image_url}' alt='AI-generated image' style='width: 400px; height: 400px;' />\n"
+        )
+        
+        html_update_prompt = (
+            f"\nHere is an article's HTML: {content}. "
+            f"Place this image's HTML in the article content: {image_html} "
+            f"Return only the updated HTML content, no human-like answer."
+        )
+        updated_content = openai_client.call_api(
+            api_type="text", model="o1-mini", 
+            prompt=html_update_prompt
+        )
+    except Exception:
+        # If there's an error, optionally fall back to a placeholder image
+        image_url = "https://via.placeholder.com/600?text=Error+Image"
+
+
+    return {"updated_content": updated_content}
+
+
+########################################
+# NOUVELLE ROUTE: /applyImages
+########################################
+class ApplyImagesRequest(BaseModel):
+    content: str
+    imageStrategy: str  # 'ownURL' | 'brodAi' | 'aiGenerated'
+    imageCount: int
+    images: List[str]  # contiendra soit URL ou prompt
+
+
+@app.post("/applyImages")
+def apply_images(payload: ApplyImagesRequest):
+    """
+    Insère des images dans l'article HTML selon la stratégie:
+    - ownURL => l'utilisateur fournit directement l'URL
+    - brodAi => (ex: on laisse GPT choisir des images, si tu implémente un micro-service d'images)
+    - aiGenerated => on appelle DALL-E/OpenAI image creation
+    """
+    content = payload.content.strip()
+    if not content:
+        raise HTTPException(status_code=400, detail="No content provided")
+
+    if payload.imageStrategy == "ownURL":
+        # On insère les URLs fournies directement dans le HTML
+        updated_content = content
+        for url in payload.images:
+            updated_content += f"\n<img src='{url}' alt='Image' style='width: 300px; height: 200px;'  />\n"
+
+    elif payload.imageStrategy == "brodAi":
+        # (Exemple à adapter) => simple placeholder
+        # On peut imaginer que tu as un service qui renvoie des URLs d'images
+        # en fonction du sujet. Ici on fait juste un placeholder.
+        updated_content = content
+        for i in range(payload.imageCount):
+            updated_content += f"\n<img src='https://via.placeholder.com/600?text=BrodAI+Image#{i+1}' alt='BrodAI image' style='width: 300px; height: 200px;'   />\n"
+
+    elif payload.imageStrategy == "aiGenerated":
+        # We generate exactly ONE image from the article content
+        openai_client = OpenAIClient()
+        try:
+            # Combine the entire article content into one prompt
+            prompt = (
+                f"Here is the article content:\n\n{content}\n\n"
+                "Generate a single relevant image."
+            )
+            # Call your custom method that returns a single image URL
+            image_url = openai_client.call_api(
+                api_type="image",
+                model="dall-e-3",  # or whichever model
+                prompt=prompt,
+            )
+            # Insert the generated image into the updated content
+            updated_content += f"\n<img src='{image_url}' alt='AI-generated image' style='width: 300px; height: 200px;' />\n"
+        except Exception:
+            updated_content += (
+                "\n<img src='https://via.placeholder.com/600?text=Error+Image'  "
+                "alt='Error generating image' />\n"
+            )
+    else:
+        # If no recognized strategy, just return the content unchanged
+        pass
+
+    return {"updated_content": updated_content}

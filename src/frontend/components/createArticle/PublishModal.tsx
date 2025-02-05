@@ -9,7 +9,7 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { publishToShopify } from '../services/shopifyService';
+import { publishToShopify } from '../../components/backendService';
 
 interface PublishModalProps {
   isOpen: boolean;

@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import {
     fetchKeywords,
     IBrodAIKeyword,
-} from "@/components/services/keywordResearchService";
+} from "@/components/backendService";
 import KeywordTable from "@/components/KeywordTable";
 // "use client";
 
 import Stack from "@mui/material/Stack";
-import TypewriterTitle from "../components/TypewriterTitle";
-import DomainSearchBar from "../components/DomainSearchBar";
+import TypewriterTitle from "@/components/TypewriterTitle";
+import DomainSearchBar from "@/components/DomainSearchBar";
 import {
     Alert,
     AlertColor,
@@ -65,10 +65,9 @@ export default function KeywordResearchPage() {
         }
     };
     const router = useRouter();
-
     function handleWriteArticle(keyword: string) {
-        // Redirect to /create-article with the selected keyword
-        router.push(`/createArticle?keyword=${encodeURIComponent(keyword)}`);
+        // Open /create-article with the selected keyword in a new tab
+        window.open(`/createArticle?keyword=${encodeURIComponent(keyword)}`, '_blank');
     }
 
     return (

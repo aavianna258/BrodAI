@@ -13,7 +13,7 @@ import {
     Typography,
 } from "@mui/material";
 import { motion } from "framer-motion";
-import { IBrodAIKeyword } from "@/components/services/keywordResearchService";
+import { IBrodAIKeyword } from "@/components/backendService";
 
 interface KeywordTableProps {
     mainKeyword: string;
@@ -46,9 +46,15 @@ const KeywordTable: React.FC<KeywordTableProps> = ({
             >
                 Top keywords related to{" "}
                 <span style={{ textDecoration: "underline", color: "blue" }}>
-                    <a href={mainKeyword}>{mainKeyword}</a>
+                    <a
+                        href={`https://www.${mainKeyword
+                            .replace(/^https?:\/\//i, "")
+                            .replace(/^www\./i, "")}`}
+                        target="_blank"
+                    >
+                        {mainKeyword}
+                    </a>
                 </span>
-                "
             </Typography>
             <TableContainer component={Paper}>
                 <Table>
