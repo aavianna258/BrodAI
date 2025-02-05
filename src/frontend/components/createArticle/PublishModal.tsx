@@ -15,24 +15,7 @@ import {
   FormLabel,
 } from '@mui/material';
 
-import { publishToShopify } from '../../components/backendService';
-
-// Stub out a WordPress publishing function
-async function publishToWordPress(
-  wpDomain: string,
-  wpUser: string,
-  wpPassword: string,
-  title: string,
-  content: string
-) {
-  // Replace with your real API call
-  return new Promise<{ success: boolean; error?: any }>((resolve) => {
-    setTimeout(() => {
-      // Example success scenario
-      resolve({ success: true });
-    }, 1000);
-  });
-}
+import { publishToShopify, publishToWordPress } from '../../components/backendService';
 
 interface PublishModalProps {
   isOpen: boolean;
@@ -78,7 +61,7 @@ export default function PublishModal({
         }
       } else {
         // WordPress
-        const data = await publishToWordPress(wpDomain, wpUser, wpPassword, title, content);
+        const data = await publishToWordPress(wpDomain, wpUser, wpPassword, title, content); // image to implement
         if (data.success) {
           alert('Article published successfully to WordPress!');
           onClose();

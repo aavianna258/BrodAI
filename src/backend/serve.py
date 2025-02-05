@@ -1,4 +1,5 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+from packages.bloggers.shopify_blogger import ShopifyBlogger
 from packages.utils.openai import OpenAIClient
 from src.packages.seo_analyzer.seo_analyzer import SeoAnalyzer
 from httpx import RequestError
@@ -6,6 +7,7 @@ from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from requests import RequestException
+from packages.utils.wordpress import WordPressClient  # Import the WordPressClient class
 
 # from packages.product_pages.product_page_optimiser import ProductPageOptimiser
 from src.packages.config.brodai_global_classes import BrodAIKeyword
@@ -571,3 +573,98 @@ def apply_images(payload: ApplyImagesRequest):
         pass
 
     return {"updated_content": updated_content}
+
+
+
+class PublishShopifyRequest(BaseModel):
+    token: str
+    store: str
+    blogId: Optional[str] = None
+    title: str
+    content: str
+    tags: List[str] = []
+    published: bool = True
+
+@app.post("/publishShopify")
+def publish_shopify_article(payload: PublishShopifyRequest):
+    try:
+        # 1) Initialise la classe ShopifyBlogger avec les credentials "dynamiques"
+        blogger = ShopifyBlogger()
+        blogger.api_token = payload.token  # on écrase la variable d'env
+        blogger.shop_url = payload.store  # on écrase également la variable d'env
+
+        # 2) Construire les données de l'article
+        article_data = {
+            "title": payload.title,
+            "author": "Demo Author",  # ou un auteur que vous gérez autrement
+            "body": payload.content,
+            "tags": payload.tags,
+            "summary": "Ceci est le résumé de l'article de démonstration.",
+            "is_published": payload.published,
+        }
+
+        # 3) Appeler la méthode create_article
+        #    - blogId = payload.blogId
+        #    - article = article_data (dict)
+        #    - publish = payload.published (pour la publication)
+        print(payload.blogId)
+        response = blogger.create_article(
+            blog_id=payload.blogId or "gid://shopify/Blog/114693013829",
+            article=article_data,
+            publish=payload.published,
+        )
+        article_create_data = response[
+            "articleCreate"
+        ]  # KeyError si la mutation n'a pas abouti
+
+        user_errors = article_create_data.get("userErrors", [])
+
+        if user_errors:
+            # On a des erreurs (ex: permissions, credentials invalides, format incorrect, etc.)
+            return {
+                "success": False,
+                "error": user_errors,  # renvoyer la liste d'erreurs pour les afficher au front
+            }
+
+        # Sinon, on récupère l'article créé
+        created_article = article_create_data["article"]
+        return {
+            "success": True,
+            "article": {
+                "title": created_article["title"],
+                # "id": created_article["id"],
+                "isPublished": created_article["isPublished"],
+            },
+        }
+
+    except Exception as e:
+        # En cas d'erreur, on renvoie un statut 500 et un message
+        return {"success": False, "error": str(e)}
+
+
+class PublishWordPressRequest(BaseModel):
+    url: str
+    username: str
+    password: str
+    title: str
+    content: str
+    featured_image: Optional[bytes] = None
+
+@app.post("/publishWordPress")
+def publish_wordpress_article(payload: PublishWordPressRequest):
+    try:
+        # Initialize the WordPress client
+        wp_client = WordPressClient(url=payload.url, username=payload.username, password=payload.password)
+
+        # Upload the featured image if provided
+        featured_media_id = None
+        if payload.featured_image:
+            featured_media_id = wp_client.upload_image(image_bytes=payload.featured_image, title=payload.title)
+
+        # Create the post
+        post = wp_client.create_post(title=payload.title, content=payload.content, featured_media=featured_media_id)
+
+        return {"success": True, "post": post}
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}

@@ -148,3 +148,29 @@ export async function publishToShopify(
   // This will throw an error with the requestName if response is not OK
   return makeBackendRequest(request, 'publishToShopify');
 }
+
+export async function publishToWordPress(
+  wordpressUrl: string,
+  wordpressUsername: string,
+  wordpressPassword: string,
+  title: string,
+  content: string,
+  featuredImage?: Blob
+) {
+  const formData = new FormData();
+  formData.append('url', wordpressUrl);
+  formData.append('username', wordpressUsername);
+  formData.append('password', wordpressPassword);
+  formData.append('title', title);
+  formData.append('content', content);
+  if (featuredImage) {
+    formData.append('featured_image', featuredImage);
+  }
+
+  const request = new Request(`${backendURL}/publishWordPress`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  return makeBackendRequest(request, 'publishToWordPress');
+}
