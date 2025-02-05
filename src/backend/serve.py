@@ -6,7 +6,8 @@ from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from requests import RequestException
-#from packages.product_pages.product_page_optimiser import ProductPageOptimiser
+
+# from packages.product_pages.product_page_optimiser import ProductPageOptimiser
 from src.packages.config.brodai_global_classes import BrodAIKeyword
 from src.packages.keyword_research.keyword_research import KeywordResearcher
 from dotenv import load_dotenv
@@ -34,6 +35,7 @@ app.add_middleware(
 
 class AnalysisRequest(BaseModel):
     domain: str
+
 
 class AnalysisResponse(BaseModel):
     status: int
@@ -134,11 +136,10 @@ def mock_keyword_research() -> Dict[str, List[BrodAIKeyword]]:
     }
 
 
-
 @app.post("/analysis", response_model=AnalysisResponse)
 def analyze_domain(payload: AnalysisRequest):
     """
-    Calls our SeoAnalyzer to run a domain analysis using SEMRush, 
+    Calls our SeoAnalyzer to run a domain analysis using SEMRush,
     then returns the results.
     """
     domain = payload.domain
@@ -150,8 +151,7 @@ def analyze_domain(payload: AnalysisRequest):
         return AnalysisResponse(status=200, data=analysis_data)
     except Exception as e:
         return AnalysisResponse(
-            status=500,
-            data={"error": f"Failed to analyze domain: {str(e)}"}
+            status=500, data={"error": f"Failed to analyze domain: {str(e)}"}
         )
 
 
@@ -180,8 +180,8 @@ def demo_kwd_research_from_domain(site_url: str) -> Dict[str, List[BrodAIKeyword
 
     except Exception as e:
         return {"status": 500, "data": {"error": str(e)}}
-    
-    
+
+
 @app.post("/generateArticle")
 def generate_article(payload: KeywordRequest):
     """

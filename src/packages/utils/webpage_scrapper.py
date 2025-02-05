@@ -13,8 +13,8 @@ class WebpageScrapper:
             url (str): The URL of the webpage to scrape.
             **kwargs (dict): Optional keyword arguments for the HTML parser.
         """
-        if not url.startswith(('http://', 'https://')):
-            url = 'http://' + url
+        if not url.startswith(("http://", "https://")):
+            url = "http://" + url
         self.url = url
         page = urlopen(self.url)
         if len(kwargs) > 0:
@@ -76,20 +76,24 @@ class WebpageScrapper:
         info = {}
 
         # Extract <title>
-        title_elements = self.html_doc_root.xpath('//title/text()')
+        title_elements = self.html_doc_root.xpath("//title/text()")
         info["title"] = title_elements[0].strip() if title_elements else ""
 
         # Extract <meta name="description">
-        meta_desc_elements = self.html_doc_root.xpath('//meta[@name="description"]/@content')
-        info["meta_description"] = meta_desc_elements[0].strip() if meta_desc_elements else ""
+        meta_desc_elements = self.html_doc_root.xpath(
+            '//meta[@name="description"]/@content'
+        )
+        info["meta_description"] = (
+            meta_desc_elements[0].strip() if meta_desc_elements else ""
+        )
 
         # Extract all <h1> texts
-        h1_elements = self.html_doc_root.xpath('//h1//text()')
+        h1_elements = self.html_doc_root.xpath("//h1//text()")
         h1_texts = [text.strip() for text in h1_elements if text.strip()]
         info["h1_texts"] = h1_texts
 
         # Extract all <h2> texts
-        h2_elements = self.html_doc_root.xpath('//h2//text()')
+        h2_elements = self.html_doc_root.xpath("//h2//text()")
         h2_texts = [text.strip() for text in h2_elements if text.strip()]
         info["h2_texts"] = h2_texts
 
@@ -103,5 +107,7 @@ class WebpageScrapper:
             str: The HTML content of the URL.
         """
         # Convert the parsed HTML document back to a string.
-        html_string = html.tostring(self.html_doc_root, encoding="unicode", method="html")
+        html_string = html.tostring(
+            self.html_doc_root, encoding="unicode", method="html"
+        )
         return html_string

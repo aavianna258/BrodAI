@@ -1,8 +1,8 @@
-// /app/create-article/services/articleService.ts
+const backendURL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function fetchArticleByKeyword(keyword: string) {
-    console.log('[articleService] fetchArticleByKeyword =>', keyword);
-    const response = await fetch('/api_mock/generateArticle', {
+    // console.log('[articleService] fetchArticleByKeyword =>', keyword);
+    const response = await fetch('http://localhost:8000/generateArticle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ main_keyword: keyword }),
