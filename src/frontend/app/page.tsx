@@ -65,9 +65,10 @@ export default function KeywordResearchPage() {
         }
     };
     const router = useRouter();
+
     function handleWriteArticle(keyword: string) {
-        // Open /create-article with the selected keyword in a new tab
-        window.open(`/createArticle?keyword=${encodeURIComponent(keyword)}`, '_blank');
+        // Redirect to /create-article with the selected keyword
+        router.push(`/createArticle?keyword=${encodeURIComponent(keyword)}`);
     }
 
     return (
