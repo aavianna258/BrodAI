@@ -8,6 +8,8 @@ import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
+import Footer from "@/components/app/NavBar";
+import NavBar from "@/components/app/Footer";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -41,8 +43,11 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
+                <NavBar/>
                 {children}
+                <Footer/>
             </body>
         </html>
+        
     );
 }

@@ -21,6 +21,7 @@ import {
 } from "../../components/backendService";
 import EditableHTMLField from "@/components/createArticle/EditableHTMLField";
 import { CircularProgress } from "@mui/material";
+import { h1 } from "framer-motion/client";
 
 export default function CreateArticlePage() {
     const searchParams = useSearchParams();
@@ -50,7 +51,7 @@ export default function CreateArticlePage() {
     const [ctaValues, setCtaValues] = useState<string[]>([]);
 
     // Images
-    const [imageStrategy, setImageStrategy] = useState("ownURL");
+    const [imageStrategy, setImageStrategy] = useState("aiGenerated");
     const [imageCount, setImageCount] = useState(1);
     const [images, setImages] = useState<{ urlOrPrompt: string }[]>([]); // not used
 
@@ -70,6 +71,11 @@ export default function CreateArticlePage() {
     const [isPublishModalOpen, setPublishModalOpen] = useState(false);
     const [shopifyDomain, setShopifyDomain] = useState("");
     const [shopifyToken, setShopifyToken] = useState("");
+
+    const setContent2: any = (newContent: string) => {
+        setContent(newContent)
+        console.log(newContent)
+    }
 
     // Fetch article on mount if keyword is present
     useEffect(() => {
@@ -275,11 +281,14 @@ export default function CreateArticlePage() {
 
                 {/* MAIN ARTICLE AREA (Example usage) */}
                 <Box style={{ flex: 1, padding: "1rem" }}>
-                    <EditableHTMLField
-                        initialHTML={content}
-                        loading={loading}
-                        onChangeHTML={(val) => setContent(val)}
-                    />
+                  <EditableHTMLField
+                    initialHTML={`<h1>${title}</h1>`}
+                    loading={loading}
+                  />
+                  <EditableHTMLField
+                    initialHTML={content}
+                    loading={loading}
+                  />
                 </Box>
             </Box>
 

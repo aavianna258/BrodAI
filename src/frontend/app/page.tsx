@@ -77,7 +77,7 @@ export default function KeywordResearchPage() {
                 padding: "60px 20px",
                 textAlign: "center",
                 minHeight: "70vh",
-                background: "radial-gradient(circle, #e0ecff 0%, #d0e0ff 100%)",
+                background: "radial-gradient(circle, rgba(231,237,242,1) 24%, rgba(138,158,221,1) 100%)"
             }}
         >
             <Stack
