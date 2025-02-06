@@ -90,19 +90,19 @@ def generate_traffic_report_and_preview(url: str) -> Dict:
 """
 
 
-@app.post("/optimise_product_page")
-def optimise_product_page(
-    product_page_content: str, target_keywords: List[str]
-) -> str | Any:
-    try:
-        optimised_content = ProductPageOptimiser(
-            product_page_content, target_keywords
-        ).optimise_page_for_target_kwds()
+# @app.post("/optimise_product_page")
+# def optimise_product_page(
+#     product_page_content: str, target_keywords: List[str]
+# ) -> str | Any:
+#     try:
+#         optimised_content = ProductPageOptimiser(
+#             product_page_content, target_keywords
+#         ).optimise_page_for_target_kwds()
 
-        return optimised_content
+#         return optimised_content
 
-    except RequestException:
-        raise RequestError("There was an issue in the system. Please try again later.")
+#     except RequestException:
+#         raise RequestError("There was an issue in the system. Please try again later.")
 
 
 @app.post("/keyword_research")
