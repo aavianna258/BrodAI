@@ -1,15 +1,14 @@
 from typing import Any, Dict, List, Optional
-from packages.bloggers.shopify_blogger import ShopifyBlogger
-from packages.utils.openai import OpenAIClient
+from src.packages.bloggers.shopify_blogger import ShopifyBlogger
+from src.packages.utils.openai import OpenAIClient
 from src.packages.seo_analyzer.seo_analyzer import SeoAnalyzer
 from httpx import RequestError
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from requests import RequestException
-from packages.utils.wordpress import WordPressClient  # Import the WordPressClient class
+from src.packages.utils.wordpress import WordPressClient  # Import the WordPressClient class
 
-# from packages.product_pages.product_page_optimiser import ProductPageOptimiser
 from src.packages.config.brodai_global_classes import BrodAIKeyword
 from src.packages.keyword_research.keyword_research import KeywordResearcher
 from dotenv import load_dotenv
